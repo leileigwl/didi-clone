@@ -56,7 +56,7 @@ export default function HomePage({ api }: HomePageProps) {
   const [amapInstance, setAmapInstance] = useState<any>(null)
 
   const mapRef = useRef<{ map: any; AMap: any } | null>(null)
-  const autoCompleteRef = useRef<any>(null)
+  const placeSearchRef = useRef<any>(null)
   const searchTimerRef = useRef<any>(null)
 
   // 如果有进行中的订单，跳转到订单页面
@@ -98,14 +98,16 @@ export default function HomePage({ api }: HomePageProps) {
     setAmapInstance(AMap)
     setMapReady(true)
 
-    // 初始化 AutoComplete 插件（搜所有类型：POI、地址、道路、小区等）
-    AMap.plugin(['AMap.AutoComplete'], () => {
-      const autoComplete = new AMap.AutoComplete({
+    // 初始化 PlaceSearch 插件（搜索所有类型地点，结果一定有坐标）
+    AMap.plugin(['AMap.PlaceSearch'], () => {
+      const placeSearch = new AMap.PlaceSearch({
         city: '全国',
-        datatype: 'all',
-        input: null,
+        citylimit: false,
+        pageSize: 10,
+        pageIndex: 1,
+        extensions: 'base',
       })
-      autoCompleteRef.current = autoComplete
+      placeSearchRef.current = placeSearch
     })
 
     // 优先使用 CoreLocation 获取真实位置
@@ -144,22 +146,20 @@ export default function HomePage({ api }: HomePageProps) {
 
   // 搜索地点（防抖）
   const doSearch = useCallback((keyword: string, type: 'pickup' | 'destination') => {
-    if (!autoCompleteRef.current || !keyword.trim()) {
+    if (!placeSearchRef.current || !keyword.trim()) {
       if (type === 'pickup') setPickupResults([])
       else setDestResults([])
       return
     }
 
-    autoCompleteRef.current.search(keyword, (status: string, result: any) => {
-      if (status === 'complete' && result.tips) {
-        const results: SearchResult[] = result.tips
-          .filter((tip: any) => tip.location)
-          .map((tip: any) => ({
-            name: tip.name,
-            address: [tip.district, tip.address].filter(Boolean).join(''),
-            lng: tip.location.getLng(),
-            lat: tip.location.getLat(),
-          }))
+    placeSearchRef.current.search(keyword, (status: string, result: any) => {
+      if (status === 'complete' && result.poiList?.pois?.length > 0) {
+        const results: SearchResult[] = result.poiList.pois.map((poi: any) => ({
+          name: poi.name,
+          address: [poi.pname, poi.cityname, poi.adname, poi.address].filter(Boolean).join(''),
+          lng: poi.location.getLng(),
+          lat: poi.location.getLat(),
+        }))
 
         // 用 AMap.GeometryUtil.distance 即时计算直线距离（同步，无需网络）
         const refPoint = type === 'destination'
