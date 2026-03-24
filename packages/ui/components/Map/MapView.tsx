@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useCallback, createContext, useContext } from 'react';
-import AMapLoader from '@amap/amap-jsapi-loader';
 import type { Position, MapTheme } from './types';
 import './MapView.css';
 
@@ -19,33 +18,73 @@ const MapContext = createContext<MapContextType>({
 export const useMap = () => useContext(MapContext);
 
 interface MapViewProps {
-  // 地图配置
   amapKey?: string;
   securityJsCode?: string;
   center?: Position;
   zoom?: number;
   theme?: MapTheme;
-
-  // 交互配置
   enableClick?: boolean;
   enableDrag?: boolean;
   onMapClick?: (position: Position) => void;
-
-  // 样式
   className?: string;
   style?: React.CSSProperties;
-
-  // 子组件
   children?: React.ReactNode;
-
-  // 地图加载完成回调
   onMapReady?: (map: AMap.Map, AMap: typeof AMap) => void;
 }
 
+// 全局标记是否已加载脚本
+let isScriptLoaded = false;
+let scriptLoadPromise: Promise<typeof AMap> | null = null;
+
+// 加载高德地图脚本
+function loadAMapScript(key: string, securityCode?: string): Promise<typeof AMap> {
+  if (isScriptLoaded && (window as any).AMap) {
+    return Promise.resolve((window as any).AMap);
+  }
+
+  if (scriptLoadPromise) {
+    return scriptLoadPromise;
+  }
+
+  scriptLoadPromise = new Promise((resolve, reject) => {
+    // 设置安全密钥 - 必须在加载脚本之前设置
+    if (securityCode) {
+      (window as any)._AMapSecurityConfig = {
+        securityJsCode: securityCode,
+      };
+    }
+
+    // 检查是否已存在脚本
+    const existingScript = document.querySelector(`script[src*="webapi.amap.com/maps"]`);
+    if (existingScript && (window as any).AMap) {
+      isScriptLoaded = true;
+      resolve((window as any).AMap);
+      return;
+    }
+
+    // 创建脚本标签
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${key}`;
+    script.onload = () => {
+      isScriptLoaded = true;
+      console.log('高德地图脚本加载成功');
+      resolve((window as any).AMap);
+    };
+    script.onerror = (e) => {
+      console.error('高德地图脚本加载失败:', e);
+      reject(new Error('高德地图脚本加载失败'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return scriptLoadPromise;
+}
+
 const MapView: React.FC<MapViewProps> = ({
-  amapKey = import.meta.env.VITE_AMAP_KEY || '',
-  securityJsCode = import.meta.env.VITE_AMAP_SECURITY_CODE || '',
-  center = { lng: 116.397428, lat: 39.90923 }, // 默认北京
+  amapKey = '7bf10417175742fc23ec515c46599e8d',
+  securityJsCode = '2d974a0b6b5a0df9c012c82a33684e15',
+  center = { lng: 116.397428, lat: 39.90923 },
   zoom = 15,
   theme = 'normal',
   enableClick = false,
@@ -80,49 +119,29 @@ const MapView: React.FC<MapViewProps> = ({
     }
 
     if (!amapKey) {
-      setError('缺少高德地图 API Key，请检查 .env 配置');
-      console.error('AMAP_KEY is empty or undefined');
+      setError('缺少高德地图 API Key');
       return;
     }
 
     console.log('正在加载高德地图, Key:', amapKey.substring(0, 8) + '...');
 
-    // 设置安全密钥 - 必须在加载前设置
-    if (securityJsCode) {
-      (window as any)._AMapSecurityConfig = {
-        securityJsCode,
-      };
-      console.log('已设置安全密钥');
-    } else {
-      console.warn('未设置安全密钥(securityJsCode)');
-    }
-
     let map: AMap.Map | null = null;
 
-    AMapLoader.load({
-      key: amapKey,
-      version: '2.0',
-      plugins: [
-        'AMap.Geolocation',
-        'AMap.Geocoder',
-        'AMap.Driving',
-        'AMap.PlaceSearch',
-        'AMap.Marker',
-        'AMap.Polyline',
-      ],
-    })
+    loadAMapScript(amapKey, securityJsCode)
       .then((AMap) => {
         if (!containerRef.current) return;
 
+        console.log('创建地图实例...');
+
+        // 创建地图实例 - 使用官方示例的方式
         map = new AMap.Map(containerRef.current, {
-          viewMode: '2D',
-          zoom,
+          zoom: zoom,
           center: [center.lng, center.lat],
+          viewMode: '2D',
           mapStyle: getMapStyle(theme),
           dragEnable: enableDrag,
           zoomEnable: true,
-          doubleClickZoom: true,
-          keyboardEnable: true,
+          resizeEnable: true,
         });
 
         // 点击事件
@@ -141,6 +160,8 @@ const MapView: React.FC<MapViewProps> = ({
         setIsLoaded(true);
         setError(null);
 
+        console.log('地图加载成功!');
+
         // 回调
         if (onMapReady) {
           onMapReady(map, AMap);
@@ -148,20 +169,14 @@ const MapView: React.FC<MapViewProps> = ({
       })
       .catch((e) => {
         console.error('地图加载失败:', e);
-        let errorMsg = '地图加载失败';
-        if (e.message) {
-          errorMsg = e.message;
-        } else if (typeof e === 'string') {
-          errorMsg = e;
-        }
-        // 常见错误提示
+        let errorMsg = typeof e === 'string' ? e : (e.message || '地图加载失败');
+
         if (errorMsg.includes('INVALID_USER_KEY') || errorMsg.includes('USERKEY')) {
           errorMsg = 'API Key 无效或未授权此域名，请在高德开放平台添加域名白名单';
         } else if (errorMsg.includes('INVALID_USER_SCODE')) {
           errorMsg = '安全密钥配置错误';
-        } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
-          errorMsg = '网络错误，请检查网络连接';
         }
+
         setError(errorMsg);
       });
 
