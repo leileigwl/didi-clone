@@ -152,7 +152,9 @@ export default function HomePage({ api }: HomePageProps) {
       return
     }
 
+    console.log('[搜索]', type, keyword)
     placeSearchRef.current.search(keyword, (status: string, result: any) => {
+      console.log('[搜索结果]', status, result?.poiList?.pois?.length || 0)
       if (status === 'complete' && result.poiList?.pois?.length > 0) {
         const results: SearchResult[] = result.poiList.pois.map((poi: any) => ({
           name: poi.name,
