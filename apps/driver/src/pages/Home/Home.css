@@ -11,8 +11,8 @@
 .map-section {
   position: relative;
   width: 100%;
-  height: 600px;
-  margin-bottom: 20px;
+  height: 350px;
+  margin-bottom: 16px;
 }
 
 .map-section .map-view-container {
@@ -126,65 +126,6 @@
 .map-error h3 {
   color: #FF6B00;
   margin-bottom: 12px;
-}
-
-/* 定位加载中遮罩 */
-.locating-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.locating-animation {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.locating-pulse {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid #1890ff;
-  animation: locating-pulse-ring 2s ease-out infinite;
-}
-
-.locating-pulse.delay-1 {
-  animation-delay: 0.5s;
-}
-
-.locating-pulse.delay-2 {
-  animation-delay: 1s;
-}
-
-@keyframes locating-pulse-ring {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
-
-.locating-text {
-  margin-top: 24px;
-  font-size: 16px;
-  color: #1890ff;
-  font-weight: 500;
 }
 
 /* Current Order Section */

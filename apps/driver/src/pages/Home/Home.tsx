@@ -38,7 +38,6 @@ const Home: React.FC = () => {
   // 义乌市中心坐标作为默认位置
   const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306 }
   const [driverLocation, setDriverLocation] = useState<Position>(DEFAULT_YIWU)
-  const [isLocating, setIsLocating] = useState(true) // 正在定位中
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
   const [currentAddress, setCurrentAddress] = useState('定位中...')
@@ -85,7 +84,6 @@ const Home: React.FC = () => {
             if ('lat' in result) {
               const { lat, lng } = result
               setDriverLocation({ lng, lat })
-              setIsLocating(false)
               setLocationDenied(false)
               map.setCenter([lng, lat])
               map.setZoom(18)
@@ -121,7 +119,6 @@ const Home: React.FC = () => {
     _AMap.plugin(['AMap.CitySearch'], () => {
       const citySearch = new _AMap.CitySearch()
       citySearch.getLocalCity((status: string, result: any) => {
-        setIsLocating(false) // 定位结束
         if (status === 'complete' && result.info === 'OK') {
           const bounds = result.bounds
           if (bounds) {
@@ -170,7 +167,6 @@ const Home: React.FC = () => {
       })
 
       geolocation.getCurrentPosition((status: string, result: any) => {
-        setIsLocating(false) // 定位结束
         if (status === 'complete' && result.position) {
           const lng = result.position.getLng()
           const lat = result.position.getLat()
@@ -233,7 +229,6 @@ const Home: React.FC = () => {
           const { lat, lng, accuracy } = result
           console.log('CoreLocation定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
           setDriverLocation({ lng, lat })
-          setIsLocating(false)
           setLocationDenied(false)
           map.setCenter([lng, lat])
           map.setZoom(18)
@@ -243,7 +238,6 @@ const Home: React.FC = () => {
         } else if (result.error === 'denied') {
           console.warn('CoreLocation权限被拒绝，需要在系统设置中开启')
           setLocationDenied(true)
-          setIsLocating(false)
         } else {
           console.warn('CoreLocation不可用:', result.error)
         }
@@ -262,7 +256,6 @@ const Home: React.FC = () => {
             const { latitude: lat, longitude: lng, accuracy } = pos.coords
             console.log('HTML5定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
             setDriverLocation({ lng, lat })
-            setIsLocating(false)
             setLocationDenied(false)
             map.setCenter([lng, lat])
             map.setZoom(18)
@@ -327,18 +320,6 @@ const Home: React.FC = () => {
 
       {/* 地图区域 */}
       <div className="map-section">
-        {/* 定位加载中状态 */}
-        {isLocating && (
-          <div className="locating-overlay">
-            <div className="locating-animation">
-              <div className="locating-pulse"></div>
-              <div className="locating-pulse delay-1"></div>
-              <div className="locating-pulse delay-2"></div>
-            </div>
-            <p className="locating-text">正在获取您的位置...</p>
-          </div>
-        )}
-
         <MapView
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
@@ -347,8 +328,8 @@ const Home: React.FC = () => {
           theme="normal"
           onMapReady={handleMapReady}
         >
-          {/* 司机位置 - 蓝色水滴+脉冲，定位完成后才显示 */}
-          {!isLocating && driverLocation && (
+          {/* 司机位置 - 蓝色水滴 */}
+          {driverLocation && (
             <MapMarker
               position={driverLocation}
               type="myLocation"
