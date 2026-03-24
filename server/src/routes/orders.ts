@@ -128,24 +128,71 @@ router.put('/:id/cancel', (req, res) => {
     return
   }
 
-  // Check if order can be cancelled
-  if (['completed', 'cancelled'].includes(order.status)) {
-    res.status(400).json(error('Order cannot be cancelled'))
+  // Check if order can be cancelled (only before driver arrives)
+  if (['arrived', 'passenger_confirmed', 'in_progress', 'completed', 'cancelled'].includes(order.status)) {
+    res.status(400).json(error('当前状态无法取消订单'))
     return
   }
 
   const updatedOrder = updateOrderStatus(req.params.id, 'cancelled')
 
-  // If driver was assigned, make them available again
+  // If driver was assigned, make them available again and notify them
   if (order.driverId) {
     const driver = drivers.get(order.driverId)
     if (driver) {
       driver.status = 'idle'
       drivers.set(driver.id, driver)
     }
+
+    // Notify driver that order was cancelled by passenger
+    if (io) {
+      io.to(`driver:${order.driverId}`).emit('order:cancelled', {
+        orderId: order.id,
+        reason: 'passenger_cancelled',
+        message: '乘客已取消订单'
+      })
+      console.log(`📢 通知司机 ${order.driverId} 订单 ${order.id} 已被乘客取消`)
+    }
   }
 
   res.json(success(updatedOrder, 'Order cancelled'))
+})
+
+// PUT /api/orders/:id/confirm-boarding - Passenger confirms boarding
+router.put('/:id/confirm-boarding', (req, res) => {
+  const order = orders.get(req.params.id)
+
+  if (!order) {
+    res.status(404).json(error('Order not found'))
+    return
+  }
+
+  // Check ownership
+  if (order.userId !== req.user!.userId) {
+    res.status(403).json(error('Access denied'))
+    return
+  }
+
+  // Can only confirm if driver has arrived
+  if (order.status !== 'arrived') {
+    res.status(400).json(error('司机还未到达'))
+    return
+  }
+
+  const updatedOrder = updateOrderStatus(req.params.id, 'passenger_confirmed')
+
+  // Notify driver that passenger has boarded
+  if (order.driverId && io) {
+    console.log(`📢 乘客确认上车，通知司机 ${order.driverId}`)
+    io.to(`driver:${order.driverId}`).emit('order:status', {
+      orderId: order.id,
+      status: 'passenger_confirmed',
+      message: '乘客已上车'
+    })
+    console.log(`✅ 已发送 order:status 事件到 driver:${order.driverId} 房间`)
+  }
+
+  res.json(success(updatedOrder, '乘客已确认上车'))
 })
 
 // GET /api/orders/:id/track - Get order tracking info

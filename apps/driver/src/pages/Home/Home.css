@@ -9,6 +9,36 @@
   height: 100vh;
 }
 
+/* 顶部状态栏 */
+.driver-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #FF6B00;
+  color: white;
+}
+
+.driver-status-bar .status-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-status-bar .app-logo {
+  font-size: 20px;
+}
+
+.driver-status-bar .app-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.driver-status-bar .time {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
 /* Map Section */
 .map-section {
   position: relative;

@@ -2,21 +2,25 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
 import { OrderStatus } from '@didi/api-client'
+import { useSocket } from '../../hooks/useSocket'
 import './OrderDetail.css'
 
 const STATUS_LABELS: Record<string, string> = {
   accepted: '已接单',
-  driver_arriving: '赶往上车点',
-  arrived: '已到达',
+  arrived: '已到达上车点',
+  passenger_confirmed: '乘客已上车',
   in_progress: '行程中',
   completed: '已完成',
+  cancelled: '已取消',
 }
 
 const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentOrder, updateOrderStatus, addEarning } = useDriverStore()
+  const { currentOrder, updateOrderStatus, addEarning, setCurrentOrder } = useDriverStore()
+  const { emitOrderCancelled, emitOrderStatus } = useSocket()
   const [isLoading, setIsLoading] = useState(false)
+  const [cancelledByPassenger, setCancelledByPassenger] = useState(false)
 
   useEffect(() => {
     if (!currentOrder || currentOrder.id !== orderId) {
@@ -24,20 +28,74 @@ const OrderDetail: React.FC = () => {
     }
   }, [currentOrder, orderId, navigate])
 
+  // 监听订单被乘客取消
+  useEffect(() => {
+    if (currentOrder?.status === 'cancelled') {
+      setCancelledByPassenger(true)
+      // 2秒后返回首页
+      const timer = setTimeout(() => {
+        setCurrentOrder(null)
+        navigate('/')
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [currentOrder?.status, setCurrentOrder, navigate])
+
+  // 如果当前订单被清空（订单不存在），返回首页
+  useEffect(() => {
+    if (!currentOrder && !cancelledByPassenger) {
+      const timer = setTimeout(() => {
+        navigate('/')
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [currentOrder, cancelledByPassenger, navigate])
+
   if (!currentOrder) {
-    return null
+    return (
+      <div className="order-detail-container">
+        <div className="order-loading-state">
+          <div className="loading-icon">⏳</div>
+          <div className="loading-text">订单已取消或不存在</div>
+          <div className="loading-hint">正在返回首页...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // 被取消的订单显示
+  if (cancelledByPassenger || currentOrder.status === 'cancelled') {
+    return (
+      <div className="order-detail-container">
+        <div className="order-header">
+          <button className="back-btn" onClick={() => navigate('/')}>
+            ←
+          </button>
+          <h1>订单已取消</h1>
+        </div>
+        <div className="cancelled-section">
+          <div className="cancelled-icon">❌</div>
+          <h2>乘客已取消订单</h2>
+          <p className="cancelled-hint">订单已被乘客取消，即将返回首页...</p>
+        </div>
+      </div>
+    )
   }
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     setIsLoading(true)
     updateOrderStatus(newStatus)
+    emitOrderStatus(currentOrder.id, newStatus)
 
-    // If order completed, add earnings
+    // If order completed, add earnings and return to home immediately
     if (newStatus === 'completed') {
       addEarning(currentOrder.price)
+      setIsLoading(false)
+      setCurrentOrder(null)
+      navigate('/')
+      return
     }
 
-    // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 500))
     setIsLoading(false)
   }
@@ -58,17 +116,18 @@ const OrderDetail: React.FC = () => {
     switch (currentOrder.status) {
       case 'accepted':
         return {
-          text: '我快到了',
-          nextStatus: 'driver_arriving' as OrderStatus,
-          color: '#FF6B00'
-        }
-      case 'driver_arriving':
-        return {
           text: '已到达上车点',
           nextStatus: 'arrived' as OrderStatus,
           color: '#52C41A'
         }
       case 'arrived':
+        return {
+          text: '等待乘客上车...',
+          nextStatus: null,
+          color: '#999',
+          disabled: true
+        }
+      case 'passenger_confirmed':
         return {
           text: '开始行程',
           nextStatus: 'in_progress' as OrderStatus,
@@ -76,7 +135,7 @@ const OrderDetail: React.FC = () => {
         }
       case 'in_progress':
         return {
-          text: '完成行程',
+          text: '完成订单',
           nextStatus: 'completed' as OrderStatus,
           color: '#52C41A'
         }
@@ -101,7 +160,7 @@ const OrderDetail: React.FC = () => {
     return `${Math.round(minutes)} 分钟`
   }
 
-  const steps = ['accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed']
+  const steps = ['accepted', 'arrived', 'passenger_confirmed', 'in_progress', 'completed']
   const currentIndex = steps.indexOf(currentOrder.status)
 
   return (
@@ -173,18 +232,7 @@ const OrderDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* 导航按钮 */}
-      <div className="navigation-section">
-        <button className="nav-btn secondary" onClick={handleNavigate}>
-          <span className="nav-icon">🗺️</span>
-          <span>高德导航</span>
-        </button>
-        <button className="nav-btn primary" onClick={handleStartNavigation}>
-          <span className="nav-icon">🧭</span>
-          <span>应用内导航</span>
-        </button>
-      </div>
-
+      
       {/* 乘客信息 */}
       <div className="contact-section">
         <h3>乘客信息</h3>
@@ -206,22 +254,10 @@ const OrderDetail: React.FC = () => {
           <button
             className="action-btn"
             style={{ backgroundColor: buttonConfig.color }}
-            onClick={() => handleStatusChange(buttonConfig.nextStatus)}
-            disabled={isLoading}
+            onClick={() => buttonConfig.nextStatus && handleStatusChange(buttonConfig.nextStatus)}
+            disabled={isLoading || buttonConfig.disabled}
           >
             {isLoading ? '处理中...' : buttonConfig.text}
-          </button>
-        </div>
-      )}
-
-      {/* 完成状态 */}
-      {currentOrder.status === 'completed' && (
-        <div className="completed-section">
-          <div className="completed-icon">✅</div>
-          <h2>行程完成!</h2>
-          <p className="completed-earnings">本单收入 ¥{currentOrder.price.toFixed(0)}</p>
-          <button className="home-btn" onClick={() => navigate('/')}>
-            返回首页
           </button>
         </div>
       )}

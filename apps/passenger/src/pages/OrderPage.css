@@ -9,6 +9,38 @@
   height: 50vh;
 }
 
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 订单错误页面 */
+.order-error-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  text-align: center;
+}
+
+.order-error-page .error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.order-error-page .error-text {
+  font-size: 16px;
+  color: #ff4d4f;
+  margin-bottom: 8px;
+}
+
+.order-error-page .error-hint {
+  font-size: 14px;
+  color: #999;
+}
+
 /* 订单状态 */
 .order-status {
   font-size: 16px;
@@ -134,4 +166,124 @@
   height: 1px;
   background: #f0f0f0;
   margin: 0 16px;
+}
+
+/* 司机正在赶来提示 */
+.arriving-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border: 1px solid #ffd591;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  animation: pulse-arriving 2s ease-in-out infinite;
+}
+
+@keyframes pulse-arriving {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.arriving-icon {
+  font-size: 32px;
+  animation: drive 1s ease-in-out infinite;
+}
+
+@keyframes drive {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+}
+
+.arriving-info {
+  flex: 1;
+}
+
+.arriving-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fa8c16;
+}
+
+.arriving-hint {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* 司机已到达提示 */
+.arrived-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  border: 1px solid #91d5ff;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  animation: pulse-arrived 2s ease-in-out infinite;
+}
+
+@keyframes pulse-arrived {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.arrived-icon {
+  font-size: 32px;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.arrived-info {
+  flex: 1;
+}
+
+.arrived-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.arrived-hint {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* 订单被取消提示 */
+.cancelled-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
+  border: 1px solid #ffa39e;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.cancelled-icon {
+  font-size: 32px;
+}
+
+.cancelled-info {
+  flex: 1;
+}
+
+.cancelled-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ff4d4f;
+}
+
+.cancelled-hint {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
 }

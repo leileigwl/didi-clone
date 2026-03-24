@@ -5,8 +5,11 @@ import { Order } from '@didi/api-client'
 
 const SOCKET_URL = 'http://localhost:3000'
 
+// 全局 socket 实例（确保只有一个）
+let globalSocket: Socket | null = null
+
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null)
+  const socketRef = useRef<Socket | null>(globalSocket)
   const {
     isOnline,
     addPendingOrder,
@@ -15,14 +18,40 @@ export function useSocket() {
     setLocation
   } = useDriverStore()
 
-  // Initialize socket connection
+  // 使用 ref 保存最新的 store 方法，避免闭包问题
+  const storeRef = useRef({
+    addPendingOrder,
+    removePendingOrder,
+    setCurrentOrder,
+    setLocation
+  })
+
+  // 更新 ref
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL, {
+    storeRef.current = {
+      addPendingOrder,
+      removePendingOrder,
+      setCurrentOrder,
+      setLocation
+    }
+  }, [addPendingOrder, removePendingOrder, setCurrentOrder, setLocation])
+
+  // 初始化 socket（只执行一次）
+  useEffect(() => {
+    if (globalSocket) {
+      socketRef.current = globalSocket
+      return
+    }
+
+    const socket = io(SOCKET_URL, {
       transports: ['websocket'],
       autoConnect: false
     })
 
-    const socket = socketRef.current
+    globalSocket = socket
+    socketRef.current = socket
+
+    // ===== 注册所有事件监听器（立即注册，不需要等 connect）=====
 
     socket.on('connect', () => {
       console.log('✅ Socket connected:', socket.id)
@@ -36,6 +65,7 @@ export function useSocket() {
       console.error('❌ Socket connection error:', error)
     })
 
+    // 新订单
     socket.on('new:order', (data: any) => {
       console.log('🎉 收到新订单:', data)
       const order: Order = {
@@ -52,7 +82,7 @@ export function useSocket() {
         distanceFromDriver: data.distanceFromDriver,
         durationFromDriver: data.durationFromDriver,
       }
-      addPendingOrder(order)
+      storeRef.current.addPendingOrder(order)
 
       if (window.Notification) {
         const distText = data.distanceFromDriver
@@ -64,31 +94,9 @@ export function useSocket() {
       }
     })
 
-    return () => {
-      socket.disconnect()
-    }
-  }, [addPendingOrder])
-
-  // Handle online/offline status - emit location to server
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-
-    if (isOnline) {
-      socket.connect()
-    } else {
-      socket.emit('driver:offline', { driverId: 'driver-1' })
-      socket.disconnect()
-    }
-  }, [isOnline])
-
-  // Listen for order accepted confirmation
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-
-    const handleAccepted = (data: any) => {
-      console.log('Order accepted:', data)
+    // 订单已接单确认
+    socket.on('order:accepted', (data: any) => {
+      console.log('✅ 订单已接单:', data)
       const order: Order = {
         id: data.orderId,
         userId: '',
@@ -101,53 +109,89 @@ export function useSocket() {
         createdAt: new Date(data.timestamp),
         updatedAt: new Date(data.timestamp),
       }
-      setCurrentOrder(order)
-      removePendingOrder(data.orderId)
-    }
+      storeRef.current.setCurrentOrder(order)
+      storeRef.current.removePendingOrder(data.orderId)
+    })
 
-    socket.on('order:accepted', handleAccepted)
+    // 订单状态更新（乘客确认上车等）- 关键！
+    socket.on('order:status', (data: { orderId: string; status: string; message?: string }) => {
+      console.log('📋 收到订单状态更新:', data)
+      const currentOrder = useDriverStore.getState().currentOrder
+
+      if (!currentOrder) {
+        console.log('📋 当前没有订单，忽略状态更新')
+        return
+      }
+
+      if (currentOrder.id !== data.orderId) {
+        console.log('📋 订单ID不匹配，忽略状态更新', currentOrder.id, data.orderId)
+        return
+      }
+
+      console.log('📋 更新订单状态:', currentOrder.status, '→', data.status)
+      storeRef.current.setCurrentOrder({ ...currentOrder, status: data.status as any })
+    })
+
+    // 订单被取消
+    socket.on('order:cancelled', (data: { orderId: string; reason?: string }) => {
+      console.log('🚫 订单被取消:', data)
+      storeRef.current.removePendingOrder(data.orderId)
+      const currentOrderId = useDriverStore.getState().currentOrder?.id
+      if (currentOrderId === data.orderId) {
+        storeRef.current.setCurrentOrder(null)
+      }
+    })
 
     return () => {
-      socket.off('order:accepted', handleAccepted)
+      // 不在这里 disconnect，保持全局 socket
     }
-  }, [setCurrentOrder, removePendingOrder])
+  }, [])
 
-  // Listen for order cancelled
+  // 上线/下线控制
   useEffect(() => {
     const socket = socketRef.current
     if (!socket) return
 
-    const handleOrderCancelled = (data: { orderId: string }) => {
-      console.log('Order cancelled:', data.orderId)
-      removePendingOrder(data.orderId)
+    if (isOnline) {
+      if (!socket.connected) {
+        socket.connect()
+      }
+    } else {
+      socket.emit('driver:offline', { driverId: 'driver-1' })
+      socket.disconnect()
     }
+  }, [isOnline])
 
-    socket.on('order:cancelled', handleOrderCancelled)
-
-    return () => {
-      socket.off('order:cancelled', handleOrderCancelled)
-    }
-  }, [removePendingOrder])
-
-  // Emit driver online with location
+  // 上报司机位置（上线时调用）
   const emitDriverOnline = useCallback((lat: number, lng: number) => {
     const socket = socketRef.current
-    if (socket && socket.connected) {
-      socket.emit('driver:online', { driverId: 'driver-1', lat, lng })
-      console.log('Emitted driver:online', lat, lng)
+    if (socket) {
+      if (!socket.connected) {
+        socket.connect()
+      }
+      // 等待连接后再发送
+      const sendOnline = () => {
+        socket.emit('driver:online', { driverId: 'driver-1', lat, lng })
+        console.log('Emitted driver:online', lat, lng)
+      }
+      if (socket.connected) {
+        sendOnline()
+      } else {
+        socket.once('connect', sendOnline)
+      }
     }
   }, [])
 
-  // Emit driver location
+  // 上报司机位置（移动时调用）
   const emitLocation = useCallback((lat: number, lng: number) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
       socket.emit('driver:location', { driverId: 'driver-1', lat, lng })
-      setLocation({ address: '', lat, lng })
+      storeRef.current.setLocation({ address: '', lat, lng })
     }
-  }, [setLocation])
+  }, [])
 
-  // Accept order via socket
+  // 接单
   const acceptOrder = useCallback((orderId: string) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
@@ -155,11 +199,27 @@ export function useSocket() {
     }
   }, [])
 
-  // Reject order via socket
+  // 拒单
   const rejectOrder = useCallback((orderId: string) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
       socket.emit('driver:reject', { orderId })
+    }
+  }, [])
+
+  // 取消订单
+  const emitOrderCancelled = useCallback((orderId: string) => {
+    const socket = socketRef.current
+    if (socket && socket.connected) {
+      socket.emit('driver:cancel', { orderId, driverId: 'driver-1' })
+    }
+  }, [])
+
+  // 更新订单状态
+  const emitOrderStatus = useCallback((orderId: string, status: string) => {
+    const socket = socketRef.current
+    if (socket && socket.connected) {
+      socket.emit('driver:status', { orderId, driverId: 'driver-1', status })
     }
   }, [])
 
@@ -168,6 +228,8 @@ export function useSocket() {
     emitLocation,
     acceptOrder,
     rejectOrder,
+    emitOrderCancelled,
+    emitOrderStatus,
   }
 }
 

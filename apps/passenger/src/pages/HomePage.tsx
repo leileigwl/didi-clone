@@ -449,18 +449,56 @@ export default function HomePage({ api }: HomePageProps) {
     }
   }, [api])
 
-  // 义乌热门地标
-  const presetDestinations = [
-    { name: '义乌站', lat: 29.3063, lng: 120.0743 },
-    { name: '国际博览中心', lat: 29.3215, lng: 120.0965 },
-    { name: '义乌港', lat: 29.3156, lng: 120.0812 },
-    { name: '绣湖广场', lat: 29.3082, lng: 120.0685 },
-    { name: '福田市场', lat: 29.3180, lng: 120.0930 },
-    { name: '义乌机场', lat: 29.3445, lng: 120.0295 },
+  // 义乌热门地标名称（坐标通过高德API动态获取）
+  const presetDestinationNames = [
+    '义乌站',
+    '义乌国际商贸城',
+    '义乌港',
+    '绣湖广场',
+    '义乌福田市场',
+    '义乌机场',
   ]
 
-  // 预设距离缓存
+  // 预设地点列表（动态从高德API获取）
+  const [presetDestinations, setPresetDestinations] = useState<Array<{ name: string; lat: number; lng: number }>>([])
   const [presetDistances, setPresetDistances] = useState<Record<string, string>>({})
+
+  // 地图加载后，通过高德 PlaceSearch 获取预设地点的真实坐标
+  useEffect(() => {
+    if (!placeSearchRef.current || presetDestinations.length > 0) return
+
+    const fetchPresetLocations = async () => {
+      const results: Array<{ name: string; lat: number; lng: number }> = []
+
+      for (const name of presetDestinationNames) {
+        try {
+          const result = await new Promise<any>((resolve) => {
+            placeSearchRef.current.search(name, (status: string, res: any) => {
+              resolve({ status, res })
+            })
+          })
+
+          if (result.status === 'complete' && result.res.poiList?.pois?.length > 0) {
+            const poi = result.res.poiList.pois[0]
+            results.push({
+              name,
+              lat: poi.location.getLat(),
+              lng: poi.location.getLng()
+            })
+            console.log(`[预设地点] ${name}: (${poi.location.getLng().toFixed(4)}, ${poi.location.getLat().toFixed(4)})`)
+          }
+        } catch (e) {
+          console.warn(`[预设地点] ${name} 查询失败:`, e)
+        }
+      }
+
+      if (results.length > 0) {
+        setPresetDestinations(results)
+      }
+    }
+
+    fetchPresetLocations()
+  }, [mapReady])
 
   // 用高德 GeometryUtil 即时显示直线距离，再异步用 Driving 获取驾车距离
   useEffect(() => {
@@ -679,7 +717,7 @@ export default function HomePage({ api }: HomePageProps) {
         )}
       </div>
 
-      {/* 价格预估 */}
+      {/* 价格预估和取消按钮 */}
       {pickup && destination && routeInfo && (
         <div className="card">
           <div className="price-display">
@@ -692,6 +730,22 @@ export default function HomePage({ api }: HomePageProps) {
               约 {distance} 公里 · {duration} 分钟
             </div>
           </div>
+          <button
+            className="btn btn-secondary btn-block"
+            style={{ marginTop: 12 }}
+            onClick={() => {
+              setPickup(null)
+              setDestination(null)
+              setPickupKeyword('')
+              setDestKeyword('')
+              setRouteInfo(null)
+              setPrice(0)
+              setDistance(0)
+              setDuration(0)
+            }}
+          >
+            重新选择
+          </button>
         </div>
       )}
 

@@ -35,8 +35,8 @@ export interface Location {
 export type OrderStatus =
   | 'pending'
   | 'accepted'
-  | 'driver_arriving'
   | 'arrived'
+  | 'passenger_confirmed'
   | 'in_progress'
   | 'completed'
   | 'cancelled'
@@ -182,6 +182,12 @@ export class APIClient {
 
   async cancelOrder(id: string): Promise<ApiResponse<Order>> {
     return this.request<Order>(`/api/orders/${id}/cancel`, {
+      method: 'PUT'
+    })
+  }
+
+  async confirmBoarding(id: string): Promise<ApiResponse<Order>> {
+    return this.request<Order>(`/api/orders/${id}/confirm-boarding`, {
       method: 'PUT'
     })
   }

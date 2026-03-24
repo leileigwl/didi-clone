@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
 import { useSocket } from '../../hooks/useSocket'
 import { MapView, MapMarker, MapRoute, type Position, type RouteInfo } from '@didi/ui'
-import StatusBar from '../../components/StatusBar/StatusBar'
 import OrderCard from '../../components/OrderCard/OrderCard'
 import './Home.css'
 
@@ -34,7 +33,10 @@ const Home: React.FC = () => {
     setCurrentOrder
   } = useDriverStore()
 
-  const { emitDriverOnline, emitLocation, acceptOrder: socketAcceptOrder } = useSocket()
+  const { emitDriverOnline, emitLocation, acceptOrder: socketAcceptOrder, emitOrderCancelled } = useSocket()
+
+  // 时间显示
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   // 义乌市中心坐标作为默认位置
   const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306 }
@@ -45,14 +47,25 @@ const Home: React.FC = () => {
   const [showLocationPicker, setShowLocationPicker] = useState(false) // 虚拟定位面板
   const mapRef = useRef<{ map: any; AMap: any } | null>(null)
 
-  // 预设测试位置
-  const presetLocations = [
-    { name: '义乌市中心', lng: 120.075, lat: 29.306 },
-    { name: '义乌站', lng: 120.0743, lat: 29.3063 },
-    { name: '国际商贸城', lng: 120.0965, lat: 29.3215 },
-    { name: '福田市场', lng: 120.0930, lat: 29.3180 },
-    { name: '绣湖广场', lng: 120.0685, lat: 29.3082 },
+  // 更新时间
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // 预设测试位置名称（坐标通过高德API动态获取）
+  const presetLocationNames = [
+    '义乌市中心',
+    '义乌站',
+    '国际商贸城',
+    '福田市场',
+    '绣湖广场',
   ]
+
+  const [presetLocations, setPresetLocations] = useState<Array<{ name: string; lng: number; lat: number }>>([])
+  const placeSearchRef = useRef<any>(null)
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline
@@ -110,9 +123,8 @@ const Home: React.FC = () => {
   // 司机取消当前订单
   const handleCancelOrder = () => {
     if (currentOrder) {
-      // 更新本地状态
+      emitOrderCancelled(currentOrder.id)
       setCurrentOrder(null)
-      // TODO: 通知服务器订单已取消
       console.log('司机取消订单:', currentOrder.id)
     }
   }
@@ -273,6 +285,50 @@ const Home: React.FC = () => {
   // 地图加载完成后定位
   const handleMapReady = useCallback((map: any, AMap: any) => {
     mapRef.current = { map, AMap }
+
+    // 初始化 PlaceSearch 插件用于获取预设地点坐标
+    AMap.plugin(['AMap.PlaceSearch'], () => {
+      placeSearchRef.current = new AMap.PlaceSearch({
+        city: '全国',
+        citylimit: false,
+        pageSize: 1,
+      })
+      console.log('[PlaceSearch] 插件初始化成功')
+
+      // 获取预设地点坐标
+      const fetchPresetLocations = async () => {
+        const results: Array<{ name: string; lng: number; lat: number }> = []
+
+        for (const name of presetLocationNames) {
+          try {
+            const result = await new Promise<any>((resolve) => {
+              placeSearchRef.current.search(name, (status: string, res: any) => {
+                resolve({ status, res })
+              })
+            })
+
+            if (result.status === 'complete' && result.res.poiList?.pois?.length > 0) {
+              const poi = result.res.poiList.pois[0]
+              results.push({
+                name,
+                lat: poi.location.getLat(),
+                lng: poi.location.getLng()
+              })
+              console.log(`[预设地点] ${name}: (${poi.location.getLng().toFixed(4)}, ${poi.location.getLat().toFixed(4)})`)
+            }
+          } catch (e) {
+            console.warn(`[预设地点] ${name} 查询失败:`, e)
+          }
+        }
+
+        if (results.length > 0) {
+          setPresetLocations(results)
+        }
+      }
+
+      fetchPresetLocations()
+    })
+
     // 策略1: 使用 macOS CoreLocation 获取真实精确位置
     const tryCoreLocation = async (): Promise<boolean> => {
       if (!window.electronAPI?.getNativeLocation) return false
@@ -358,7 +414,6 @@ const Home: React.FC = () => {
   if (!AMAP_KEY || AMAP_KEY === 'your_amap_web_key_here') {
     return (
       <div className="home-container">
-        <StatusBar />
         <div className="map-error">
           <h3>地图配置缺失</h3>
           <p>请在 apps/driver/.env 文件中配置高德地图 API Key</p>
@@ -369,7 +424,16 @@ const Home: React.FC = () => {
 
   return (
     <div className="home-container">
-      <StatusBar />
+      {/* 顶部状态栏 */}
+      <div className="driver-status-bar">
+        <div className="status-left">
+          <span className="app-logo">🚕</span>
+          <span className="app-title">滴滴出行司机版</span>
+        </div>
+        <div className="status-right">
+          <span className="time">{currentTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </div>
 
       {/* 地图区域 */}
       <div className="map-section">

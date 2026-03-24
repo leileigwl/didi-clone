@@ -13,9 +13,9 @@ const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: '等待接单',
-  accepted: '司机已接单',
-  driver_arriving: '司机正在赶来',
-  arrived: '司机已到达',
+  accepted: '司机已接单，正在赶来',
+  arrived: '司机已到达上车点',
+  passenger_confirmed: '行程即将开始',
   in_progress: '行程中',
   completed: '已完成',
   cancelled: '已取消'
@@ -23,9 +23,9 @@ const statusLabels: Record<OrderStatus, string> = {
 
 const statusIcons: Record<OrderStatus, string> = {
   pending: '⏳',
-  accepted: '✅',
-  driver_arriving: '🚗',
+  accepted: '🚗',
   arrived: '📍',
+  passenger_confirmed: '✅',
   in_progress: '🚀',
   completed: '🎉',
   cancelled: '❌'
@@ -72,6 +72,10 @@ export default function OrderPage({ api }: OrderPageProps) {
       if (data.driver) {
         setDriver(data.driver)
       }
+      // 乘客确认上车后，更新状态
+      if (data.status === 'passenger_confirmed') {
+        setOrder(prev => prev ? { ...prev, status: 'passenger_confirmed' } : prev)
+      }
     })
 
     const unsubLocation = api.onDriverLocation((data: any) => {
@@ -108,26 +112,39 @@ export default function OrderPage({ api }: OrderPageProps) {
   if (loading) {
     return (
       <div className="order-loading">
-        <div className="spin" style={{ fontSize: 32 }}>⏳</div>
+        <div className="loading-content">
+          <div className="spin" style={{ fontSize: 32 }}>⏳</div>
+          <div style={{ marginTop: 12, color: '#999' }}>加载订单中...</div>
+        </div>
       </div>
     )
   }
 
   if (error || !order) {
+    // 订单不存在或出错，自动返回首页
+    setTimeout(() => navigate('/'), 1500)
     return (
-      <div style={{ textAlign: 'center', padding: 40 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-        <div>{error || '订单不存在'}</div>
-        <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/')}>
-          返回首页
-        </button>
+      <div className="order-error-page">
+        <div className="error-icon">❌</div>
+        <div className="error-text">{error || '订单不存在'}</div>
+        <div className="error-hint">正在返回首页...</div>
       </div>
     )
   }
 
   // 计算进度条步骤
-  const statusSteps: OrderStatus[] = ['pending', 'accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed']
+  const statusSteps: OrderStatus[] = ['pending', 'accepted', 'arrived', 'passenger_confirmed', 'in_progress', 'completed']
   const currentStepIdx = statusSteps.indexOf(order.status)
+
+  // 乘客确认上车
+  const handleConfirmBoard = async () => {
+    try {
+      await api.confirmBoarding(order.id)
+      setOrder({ ...order, status: 'passenger_confirmed' })
+    } catch (e) {
+      console.error('确认上车失败', e)
+    }
+  }
 
   return (
     <div className="order-page">
@@ -177,7 +194,7 @@ export default function OrderPage({ api }: OrderPageProps) {
           )}
 
           {/* 路线：司机到上车点 / 上车点到目的地 */}
-          {!['completed', 'cancelled', 'pending'].includes(order.status) && driverLocation && (
+          {['accepted', 'arrived'].includes(order.status) && driverLocation && (
             <MapRoute
               origin={{ lng: driverLocation.lng, lat: driverLocation.lat, address: '' }}
               destination={order.pickup}
@@ -185,7 +202,7 @@ export default function OrderPage({ api }: OrderPageProps) {
             />
           )}
 
-          {['in_progress'].includes(order.status) && (
+          {['passenger_confirmed', 'in_progress'].includes(order.status) && (
             <MapRoute
               origin={order.pickup}
               destination={order.destination}
@@ -194,6 +211,48 @@ export default function OrderPage({ api }: OrderPageProps) {
           )}
         </MapView>
       </div>
+
+      {/* 司机正在赶来提示 */}
+      {order.status === 'accepted' && driverLocation && (
+        <div className="arriving-banner">
+          <span className="arriving-icon">🚗</span>
+          <div className="arriving-info">
+            <div className="arriving-title">司机正在赶来</div>
+            <div className="arriving-hint">请到上车点等候</div>
+          </div>
+        </div>
+      )}
+
+      {/* 司机已到达提示 + 确认上车按钮 */}
+      {order.status === 'arrived' && (
+        <>
+          <div className="arrived-banner">
+            <span className="arrived-icon">🚗</span>
+            <div className="arrived-info">
+              <div className="arrived-title">司机已到达上车点</div>
+              <div className="arrived-hint">请确认车牌号后上车</div>
+            </div>
+          </div>
+          <button
+            className="btn btn-primary btn-block"
+            style={{ marginTop: 8 }}
+            onClick={handleConfirmBoard}
+          >
+            确认上车
+          </button>
+        </>
+      )}
+
+      {/* 订单被取消提示 */}
+      {order.status === 'cancelled' && (
+        <div className="cancelled-banner">
+          <span className="cancelled-icon">❌</span>
+          <div className="cancelled-info">
+            <div className="cancelled-title">订单已取消</div>
+            <div className="cancelled-hint">司机已取消此订单</div>
+          </div>
+        </div>
+      )}
 
       {/* 司机信息 */}
       {driver && !['pending', 'cancelled'].includes(order.status) && (
@@ -242,8 +301,8 @@ export default function OrderPage({ api }: OrderPageProps) {
         </div>
       </div>
 
-      {/* 操作按钮 */}
-      {['pending', 'accepted', 'driver_arriving'].includes(order.status) && (
+      {/* 操作按钮 - 司机到达前可取消 */}
+      {['pending', 'accepted'].includes(order.status) && (
         <button
           className="btn btn-block"
           style={{ background: '#fff2f0', color: 'var(--error)' }}
@@ -258,7 +317,7 @@ export default function OrderPage({ api }: OrderPageProps) {
           className="btn btn-primary btn-block"
           onClick={() => navigate('/')}
         >
-          再来一单
+          完成订单
         </button>
       )}
 

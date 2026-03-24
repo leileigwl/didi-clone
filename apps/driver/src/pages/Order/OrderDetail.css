@@ -358,3 +358,63 @@
 .home-btn:hover {
   background: #e55d00;
 }
+
+/* Cancelled Section */
+.cancelled-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.cancelled-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.cancelled-section h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: #ff4d4f;
+}
+
+.cancelled-hint {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* 订单加载状态 */
+.order-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+}
+
+.order-loading-state .loading-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.order-loading-state .loading-text {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.order-loading-state .loading-hint {
+  font-size: 14px;
+  color: #999;
+}

@@ -25,7 +25,7 @@ interface Location {
     lat: number;
     lng: number;
 }
-type OrderStatus = 'pending' | 'accepted' | 'driver_arriving' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
+type OrderStatus = 'pending' | 'accepted' | 'arrived' | 'passenger_confirmed' | 'in_progress' | 'completed' | 'cancelled';
 interface Order {
     id: string;
     userId: string;
@@ -87,6 +87,7 @@ declare class APIClient {
     getOrders(): Promise<ApiResponse<Order[]>>;
     getOrder(id: string): Promise<ApiResponse<Order>>;
     cancelOrder(id: string): Promise<ApiResponse<Order>>;
+    confirmBoarding(id: string): Promise<ApiResponse<Order>>;
     trackOrder(id: string): Promise<ApiResponse<{
         orderId: string;
         status: OrderStatus;

@@ -78,6 +78,11 @@ var APIClient = class {
       method: "PUT"
     });
   }
+  async confirmBoarding(id) {
+    return this.request(`/api/orders/${id}/confirm-boarding`, {
+      method: "PUT"
+    });
+  }
   async trackOrder(id) {
     return this.request(`/api/orders/${id}/track`);
   }

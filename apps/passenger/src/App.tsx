@@ -14,28 +14,37 @@ function App() {
   const location = useLocation()
   const { user, setUser } = usePassengerStore()
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null)
+  const [initialized, setInitialized] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  // 更新时间显示
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // 自动登录
   useEffect(() => {
     const autoLogin = async () => {
       const token = localStorage.getItem('passenger_token')
-      if (token && !user) {
+      if (token) {
         api.setToken(token)
         try {
           const res = await api.getCurrentUser()
           if (res.code === 0 && res.data) {
             setUser(res.data)
-          } else {
-            // token 无效，重新登录
-            await loginWithTestPhone()
+            setInitialized(true)
+            return
           }
         } catch (e) {
-          await loginWithTestPhone()
+          console.warn('Token 验证失败，重新登录')
         }
-      } else if (!token) {
-        // 没有 token，自动使用测试手机号登录
-        await loginWithTestPhone()
       }
+      // 没有 token 或 token 无效，重新登录
+      await loginWithTestPhone()
+      setInitialized(true)
     }
 
     const loginWithTestPhone = async () => {
@@ -57,7 +66,26 @@ function App() {
     }
 
     autoLogin()
-  }, [])
+  }, [setUser])
+
+  // 等待初始化完成
+  if (!initialized) {
+    return (
+      <div className="app">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          gap: 16
+        }}>
+          <div style={{ fontSize: 48 }}>🚕</div>
+          <div style={{ color: '#999' }}>加载中...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app">
@@ -68,7 +96,7 @@ function App() {
           <span className="app-title">滴滴出行</span>
         </div>
         <div className="status-right">
-          <span className="time">{new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="time">{currentTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
 
@@ -77,7 +105,6 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage api={api} />} />
           <Route path="/order/:id" element={<OrderPage api={api} />} />
-          <Route path="/profile" element={<ProfilePage api={api} />} />
         </Routes>
       </main>
 
@@ -87,11 +114,11 @@ function App() {
           <span className="nav-icon">🏠</span>
           <span className="nav-label">首页</span>
         </Link>
-        <Link to="/orders" className={`nav-item ${location.pathname.startsWith('/order') ? 'active' : ''}`}>
+        <Link to="/" className={`nav-item ${location.pathname.startsWith('/order') ? 'active' : ''}`}>
           <span className="nav-icon">📋</span>
           <span className="nav-label">订单</span>
         </Link>
-        <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
+        <Link to="/" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
           <span className="nav-icon">👤</span>
           <span className="nav-label">我的</span>
         </Link>
