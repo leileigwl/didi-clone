@@ -86,7 +86,7 @@ const Home: React.FC = () => {
     })
   }, [])
 
-  // 高德 IP 定位 - 使用 JS API 的 CitySearch（REST API 需要 Web服务类型的 key）
+  // 高德 IP 定位 - 使用 JS API 的 CitySearch
   const locateWithIPApi = useCallback((_AMap: any, map: any) => {
     _AMap.plugin(['AMap.CitySearch'], () => {
       const citySearch = new _AMap.CitySearch()
@@ -94,18 +94,32 @@ const Home: React.FC = () => {
         if (status === 'complete' && result.info === 'OK') {
           const bounds = result.bounds
           if (bounds) {
-            const center = bounds.getCenter()
-            const lng = center.getLng()
-            const lat = center.getLat()
-            setDriverLocation({ lng, lat })
-            if (map) {
-              map.setCenter([lng, lat])
+            // CitySearch 返回地级市中心，但应用主要面向义乌
+            // 金华市辖区较大，IP无法区分义乌/东阳/永康等，默认使用义乌
+            if (result.city === '金华市') {
+              setDriverLocation(DEFAULT_YIWU)
+              setCurrentAddress('浙江省义乌市')
+              if (map) {
+                map.setCenter([DEFAULT_YIWU.lng, DEFAULT_YIWU.lat])
+                map.setZoom(14)
+              }
+              console.log('IP定位: 金华市区域，默认使用义乌市中心', `(${DEFAULT_YIWU.lng}, ${DEFAULT_YIWU.lat})`)
+            } else {
+              const center = bounds.getCenter()
+              const lng = center.getLng()
+              const lat = center.getLat()
+              setDriverLocation({ lng, lat })
+              if (map) {
+                map.setCenter([lng, lat])
+              }
+              setCurrentAddress(result.province + result.city)
+              console.log('IP定位结果:', result.city, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`)
             }
-            setCurrentAddress(result.province + result.city)
-            console.log('IP定位结果:', result.city, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`)
           }
         } else {
-          console.warn('CitySearch定位失败，使用默认位置')
+          console.warn('CitySearch定位失败，使用义乌默认位置')
+          setDriverLocation(DEFAULT_YIWU)
+          setCurrentAddress('浙江省义乌市')
         }
       })
     })

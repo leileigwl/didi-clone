@@ -207,7 +207,7 @@ export default function HomePage({ api }: HomePageProps) {
     })
   }, [reverseGeocode])
 
-  // 高德 IP 定位 - 使用 JS API 的 CitySearch（REST API 需要 Web服务类型的 key）
+  // 高德 IP 定位 - 使用 JS API 的 CitySearch
   const locateWithIPApi = useCallback((map: any) => {
     const currentAMap = mapRef.current?.AMap
     if (!currentAMap) return
@@ -220,16 +220,24 @@ export default function HomePage({ api }: HomePageProps) {
         if (status === 'complete' && result.info === 'OK') {
           const bounds = result.bounds
           if (bounds) {
-            const center = bounds.getCenter()
-            const pos: Position = {
-              lng: center.getLng(),
-              lat: center.getLat(),
-              address: result.province + result.city,
+            // 金华市区域默认使用义乌（IP无法区分地级市下的县级市）
+            if (result.city === '金华市') {
+              setCurrentLocation(DEFAULT_YIWU)
+              map.setCenter([DEFAULT_YIWU.lng, DEFAULT_YIWU.lat])
+              map.setZoom(14)
+              console.log('IP定位: 金华市区域，默认使用义乌市中心')
+            } else {
+              const center = bounds.getCenter()
+              const pos: Position = {
+                lng: center.getLng(),
+                lat: center.getLat(),
+                address: result.province + result.city,
+              }
+              setCurrentLocation(pos)
+              map.setCenter([pos.lng, pos.lat])
+              map.setZoom(14)
+              console.log('IP定位结果:', result.city)
             }
-            setCurrentLocation(pos)
-            map.setCenter([pos.lng, pos.lat])
-            map.setZoom(14)
-            console.log('IP定位结果:', result.city)
           }
         } else {
           console.warn('CitySearch定位失败，使用义乌默认位置')
