@@ -74,16 +74,27 @@ const MapView: React.FC<MapViewProps> = ({
 
   // 初始化地图
   useEffect(() => {
-    if (!containerRef.current || !amapKey) {
-      setError('缺少高德地图 Key');
+    if (!containerRef.current) {
+      setError('地图容器未找到');
       return;
     }
 
-    // 设置安全密钥
+    if (!amapKey) {
+      setError('缺少高德地图 API Key，请检查 .env 配置');
+      console.error('AMAP_KEY is empty or undefined');
+      return;
+    }
+
+    console.log('正在加载高德地图, Key:', amapKey.substring(0, 8) + '...');
+
+    // 设置安全密钥 - 必须在加载前设置
     if (securityJsCode) {
       (window as any)._AMapSecurityConfig = {
         securityJsCode,
       };
+      console.log('已设置安全密钥');
+    } else {
+      console.warn('未设置安全密钥(securityJsCode)');
     }
 
     let map: AMap.Map | null = null;
@@ -137,7 +148,21 @@ const MapView: React.FC<MapViewProps> = ({
       })
       .catch((e) => {
         console.error('地图加载失败:', e);
-        setError('地图加载失败，请检查网络或 Key 配置');
+        let errorMsg = '地图加载失败';
+        if (e.message) {
+          errorMsg = e.message;
+        } else if (typeof e === 'string') {
+          errorMsg = e;
+        }
+        // 常见错误提示
+        if (errorMsg.includes('INVALID_USER_KEY') || errorMsg.includes('USERKEY')) {
+          errorMsg = 'API Key 无效或未授权此域名，请在高德开放平台添加域名白名单';
+        } else if (errorMsg.includes('INVALID_USER_SCODE')) {
+          errorMsg = '安全密钥配置错误';
+        } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+          errorMsg = '网络错误，请检查网络连接';
+        }
+        setError(errorMsg);
       });
 
     return () => {
@@ -192,7 +217,10 @@ const MapView: React.FC<MapViewProps> = ({
         )}
         {error && (
           <div className="map-error">
-            <span>{error}</span>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🗺️</div>
+              <div>{error}</div>
+            </div>
           </div>
         )}
         {isLoaded && children}
