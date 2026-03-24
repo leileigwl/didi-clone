@@ -30,7 +30,8 @@ const Home: React.FC = () => {
     pendingOrders,
     earnings,
     acceptOrder,
-    rejectOrder
+    rejectOrder,
+    setCurrentOrder
   } = useDriverStore()
 
   const { emitDriverOnline, emitLocation, acceptOrder: socketAcceptOrder } = useSocket()
@@ -104,6 +105,16 @@ const Home: React.FC = () => {
 
   const handleRejectOrder = (orderId: string) => {
     rejectOrder(orderId)
+  }
+
+  // 司机取消当前订单
+  const handleCancelOrder = () => {
+    if (currentOrder) {
+      // 更新本地状态
+      setCurrentOrder(null)
+      // TODO: 通知服务器订单已取消
+      console.log('司机取消订单:', currentOrder.id)
+    }
   }
 
   const handleViewCurrentOrder = () => {
@@ -501,7 +512,10 @@ const Home: React.FC = () => {
               <span className="order-status">{STATUS_LABELS[currentOrder.status] || currentOrder.status}</span>
               <span className="order-price">¥{currentOrder.price}</span>
             </div>
-            <button className="view-order-btn">查看详情</button>
+            <div className="order-actions-row">
+              <button className="view-order-btn" onClick={(e) => { e.stopPropagation(); handleViewCurrentOrder(); }}>查看详情</button>
+              <button className="cancel-order-btn" onClick={(e) => { e.stopPropagation(); handleCancelOrder(); }}>取消订单</button>
+            </div>
           </div>
         </div>
       )}
