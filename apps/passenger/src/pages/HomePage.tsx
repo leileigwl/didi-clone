@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { APIClient } from '@didi/api-client'
 import { usePassengerStore } from '../store/passengerStore'
+import './HomePage.css'
 
 interface HomePageProps {
   api: APIClient
@@ -32,12 +33,11 @@ export default function HomePage({ api }: HomePageProps) {
     if (currentOrder && ['pending', 'accepted', 'driver_arriving', 'in_progress'].includes(currentOrder.status)) {
       navigate(`/order/${currentOrder.id}`)
     }
-  }, [currentOrder])
+  }, [currentOrder, navigate])
 
   // 模拟计算价格
   useEffect(() => {
     if (pickup && destination) {
-      // 模拟计算
       const dist = Math.random() * 20 + 5
       const dur = Math.random() * 30 + 10
       const pri = Math.round(dist * 2.5 + dur * 0.5 + 10)
@@ -88,21 +88,54 @@ export default function HomePage({ api }: HomePageProps) {
     <div className="home-page">
       {/* 地图区域 */}
       <div className="map-container">
-        <div className="map-placeholder">
-          {pickup ? `📍 ${pickup.address}` : '点击选择上车地点'}
+        <div className="map-content">
+          {/* 模拟地图背景 */}
+          <div className="map-background">
+            <div className="map-grid-lines"></div>
+          </div>
+
+          {/* 模拟道路 */}
+          <div className="road road-horizontal" style={{ top: '30%' }}></div>
+          <div className="road road-horizontal" style={{ top: '60%' }}></div>
+          <div className="road road-vertical" style={{ left: '25%' }}></div>
+          <div className="road road-vertical" style={{ left: '65%' }}></div>
+
+          {/* 地图上的标记 */}
+          {pickup && (
+            <div className="map-marker pickup-marker">
+              <div className="marker-icon">📍</div>
+              <div className="marker-label">上车点</div>
+            </div>
+          )}
+
+          {destination && (
+            <div className="map-marker destination-marker">
+              <div className="marker-icon">🎯</div>
+              <div className="marker-label">目的地</div>
+            </div>
+          )}
+
+          {/* 模拟车辆 */}
+          <div className="map-car car-1">🚗</div>
+          <div className="map-car car-2">🚕</div>
+          <div className="map-car car-3">🚙</div>
+
+          {/* 提示文字 */}
+          <div className="map-hint">
+            {pickup && destination
+              ? `预计 ${duration} 分钟到达`
+              : '点击下方选择地点'}
+          </div>
         </div>
       </div>
 
       {/* 地点选择 */}
       <div className="card">
-        <div className="location-item" onClick={() => {
-          // 模拟选择地点
-          setPickup({
-            address: '中关村软件园',
-            lat: 39.9841,
-            lng: 116.3074
-          })
-        }}>
+        <div className="location-item" onClick={() => setPickup({
+          address: '中关村软件园',
+          lat: 39.9841,
+          lng: 116.3074
+        })}>
           <div className="location-icon pickup">📍</div>
           <div className="location-info">
             <div className="location-label">上车地点</div>
@@ -112,14 +145,11 @@ export default function HomePage({ api }: HomePageProps) {
           </div>
         </div>
 
-        <div className="location-item" onClick={() => {
-          // 模拟选择目的地
-          setDestination({
-            address: '国贸CBD',
-            lat: 39.9087,
-            lng: 116.4602
-          })
-        }}>
+        <div className="location-item" onClick={() => setDestination({
+          address: '国贸CBD',
+          lat: 39.9087,
+          lng: 116.4602
+        })}>
           <div className="location-icon destination">🎯</div>
           <div className="location-info">
             <div className="location-label">目的地</div>
@@ -139,7 +169,7 @@ export default function HomePage({ api }: HomePageProps) {
               ¥{price}
               <span className="price-unit">.00</span>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>
+            <div className="price-detail">
               约 {distance} 公里 · {duration} 分钟
             </div>
           </div>
@@ -152,45 +182,23 @@ export default function HomePage({ api }: HomePageProps) {
         onClick={handleCallRide}
         disabled={!pickup || !destination || loading}
       >
-        {loading ? (
-          <>
-            <span className="spin">⏳</span>
-            叫车中...
-          </>
-        ) : (
-          '立即叫车'
-        )}
+        {loading ? '叫车中...' : '立即叫车'}
       </button>
 
       {/* 错误提示 */}
       {error && (
-        <div style={{
-          padding: 12,
-          background: '#fff2f0',
-          color: 'var(--error)',
-          borderRadius: 8,
-          marginTop: 12,
-          fontSize: 14
-        }}>
+        <div className="error-message">
           {error}
         </div>
       )}
 
       {/* 登录提示 */}
       {!user && (
-        <div style={{
-          padding: 16,
-          background: '#fff7e6',
-          borderRadius: 8,
-          marginTop: 12,
-          textAlign: 'center'
-        }}>
-          <div style={{ marginBottom: 8 }}>请先登录以使用叫车服务</div>
+        <div className="login-hint">
+          <div className="login-hint-text">请先登录以使用叫车服务</div>
           <button
             className="btn btn-primary"
-            style={{ padding: '8px 24px' }}
             onClick={() => {
-              // 模拟登录
               api.sendVerificationCode('13900138000')
                 .then(() => api.verifyCode('13900138000', '123456'))
                 .then(res => {
