@@ -58,13 +58,9 @@ const markerIcons: Record<MarkerType, { icon: string; size: [number, number]; an
     anchor: [20, 24],
   },
   myLocation: {
-    icon: `<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="18" cy="18" r="16" fill="rgba(24, 144, 255, 0.15)" stroke="#1890ff" stroke-width="2"/>
-      <circle cx="18" cy="18" r="8" fill="#1890ff"/>
-      <circle cx="18" cy="18" r="4" fill="white"/>
-    </svg>`,
-    size: [36, 36],
-    anchor: [18, 18],
+    icon: `<span style="font-size: 32px; line-height: 1;">📍</span>`,
+    size: [32, 32],
+    anchor: [16, 32],
   },
 };
 
