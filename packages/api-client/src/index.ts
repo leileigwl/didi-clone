@@ -278,6 +278,18 @@ export class APIClient {
     if (!this.socket) this.connectSocket()
     this.socket?.emit('driver:location', { driverId, lat, lng })
   }
+
+  // Admin API
+  async getStats(): Promise<ApiResponse<{
+    todayOrders: number
+    activeDrivers: number
+    todayRevenue: number
+    avgWaitTime: number
+    orderTrend: Array<{ time: string; orders: number; revenue: number }>
+    driverDistribution: Array<{ area: string; count: number; lat: number; lng: number }>
+  }>> {
+    return this.request('/api/admin/stats')
+  }
 }
 
 // Create default instance

@@ -65,9 +65,18 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   fetchStats: async () => {
     set({ loading: true, error: null })
     try {
-      // In real app, this would call actual API endpoints
-      // For demo, we simulate with mock data
-      const mockStats: DashboardStats = {
+      // Call the stats API endpoint
+      const response = await api.getStats()
+      if (response.code === 0) {
+        set({ stats: response.data as DashboardStats, loading: false })
+      } else {
+        set({ error: response.message, loading: false })
+      }
+    } catch (err) {
+      set({ error: 'Failed to fetch stats', loading: false })
+      console.error('Error fetching stats:', err)
+    }
+  },
         todayOrders: 156,
         activeDrivers: 42,
         todayRevenue: 12580,

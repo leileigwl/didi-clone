@@ -5,6 +5,7 @@ import cors from 'cors'
 import authRoutes from './routes/auth'
 import orderRoutes from './routes/orders'
 import driverRoutes, { setSocketServer } from './routes/drivers'
+import adminRoutes from './routes/admin'
 import { setupSocket } from './socket'
 import { initMockData } from './store'
 
@@ -49,6 +50,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/drivers', driverRoutes)
+app.use('/api/admin', adminRoutes)
 
 // 404 handler
 app.use((req, res) => {
@@ -62,10 +64,10 @@ app.use((req, res) => {
 // Error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err)
-  res.status(500).json({
+ res.status(500).json({
     code: 500,
     data: null,
-    message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+    message: err.message
   })
 })
 
