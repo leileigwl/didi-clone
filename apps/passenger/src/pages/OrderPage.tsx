@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { APIClient, OrderStatus, Driver, type Order } from '@didi/api-client'
 import { MapView, MapMarker, MapRoute, type Position } from '@didi/ui'
+import { usePassengerStore } from '../store/passengerStore'
 import './OrderPage.css'
 
 interface OrderPageProps {
@@ -34,6 +35,7 @@ const statusIcons: Record<OrderStatus, string> = {
 export default function OrderPage({ api }: OrderPageProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { setCurrentOrder, setPickup, setDestination } = usePassengerStore()
 
   const [order, setOrder] = useState<Order | null>(null)
   const [driver, setDriver] = useState<Driver | null>(null)
@@ -315,7 +317,13 @@ export default function OrderPage({ api }: OrderPageProps) {
       {order.status === 'completed' && (
         <button
           className="btn btn-primary btn-block"
-          onClick={() => navigate('/')}
+          onClick={() => {
+            // 清理订单状态，返回首页
+            setCurrentOrder(null)
+            setPickup(null)
+            setDestination(null)
+            navigate('/')
+          }}
         >
           完成订单
         </button>
@@ -324,7 +332,10 @@ export default function OrderPage({ api }: OrderPageProps) {
       {order.status === 'cancelled' && (
         <button
           className="btn btn-primary btn-block"
-          onClick={() => navigate('/')}
+          onClick={() => {
+            setCurrentOrder(null)
+            navigate('/')
+          }}
         >
           返回首页
         </button>
