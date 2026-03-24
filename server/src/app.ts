@@ -3,7 +3,7 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
 import authRoutes from './routes/auth'
-import orderRoutes from './routes/orders'
+import orderRoutes, { setSocketServerForOrders } from './routes/orders'
 import driverRoutes, { setSocketServer } from './routes/drivers'
 import adminRoutes from './routes/admin'
 import { setupSocket } from './socket'
@@ -74,6 +74,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Initialize
 initMockData()
 setSocketServer(io)
+setSocketServerForOrders(io)
 setupSocket(io)
 
 // Start server

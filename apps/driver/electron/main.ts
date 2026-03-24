@@ -12,8 +12,8 @@ function createTrayIcon(online) {
   const canvas = `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
       <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}"
-        fill="${online ? '#7AC9A8' : '#888888'}"
-        stroke="${online ? '#5BA887' : '#666666'}"
+        fill="${online ? '#FF6B00' : '#888888'}"
+        stroke="${online ? '#e55d00' : '#666666'}"
         stroke-width="1"/>
     </svg>
   `
@@ -141,8 +141,17 @@ function createWindow() {
       webSecurity: false // 允许加载外部脚本（高德地图）
     },
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#f5f5f5',
     show: false
+  })
+
+  // 请求定位权限
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'geolocation') {
+      callback(true) // 允许定位
+    } else {
+      callback(true) // 允许其他权限
+    }
   })
 
   mainWindow.once('ready-to-show', () => {
@@ -227,6 +236,22 @@ ipcMain.handle('driver:maximize', () => {
     } else {
       mainWindow.maximize()
     }
+  }
+  return true
+})
+
+// 请求macOS定位权限 - 注意: Electron的systemPreferences不支持location类型
+// 定位权限由浏览器geolocation API自动触发macOS系统对话框
+ipcMain.handle('driver:request-location-permission', async () => {
+  // 在macOS上，当webContent请求geolocation时，系统会自动弹出权限对话框
+  // Info.plist中的NSLocationWhenInUseUsageDescription已经配置
+  return { granted: true, status: 'prompt' }
+})
+
+// 打开系统偏好设置的定位服务
+ipcMain.handle('driver:open-location-settings', async () => {
+  if (process.platform === 'darwin') {
+    await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
   }
   return true
 })

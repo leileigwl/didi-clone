@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { APIClient } from '@didi/api-client'
 import { usePassengerStore } from '../store/passengerStore'
@@ -9,13 +9,16 @@ interface HomePageProps {
   api: APIClient
 }
 
-// 高德地图 Key - 直接配置测试
+// 高德地图 Key
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '7bf10417175742fc23ec515c46599e8d'
 const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6b5a0df9c012c82a33684e15'
 
-// Debug: 输出 key 状态（不输出完整 key）
-console.log('Amap Key loaded:', AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED')
-console.log('Security Code loaded:', AMAP_SECURITY_CODE ? 'YES' : 'NO')
+interface SearchResult {
+  name: string
+  address: string
+  lng: number
+  lat: number
+}
 
 export default function HomePage({ api }: HomePageProps) {
   const navigate = useNavigate()
@@ -39,6 +42,19 @@ export default function HomePage({ api }: HomePageProps) {
   const [currentLocation, setCurrentLocation] = useState<Position | null>(null)
   const [mapReady, setMapReady] = useState(false)
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
+  const [isLocating, setIsLocating] = useState(false)
+
+  // 搜索相关
+  const [pickupKeyword, setPickupKeyword] = useState('')
+  const [destKeyword, setDestKeyword] = useState('')
+  const [pickupResults, setPickupResults] = useState<SearchResult[]>([])
+  const [destResults, setDestResults] = useState<SearchResult[]>([])
+  const [activeInput, setActiveInput] = useState<'pickup' | 'destination' | null>(null)
+  const [amapInstance, setAmapInstance] = useState<any>(null)
+
+  const mapRef = useRef<{ map: any; AMap: any } | null>(null)
+  const autoCompleteRef = useRef<any>(null)
+  const searchTimerRef = useRef<any>(null)
 
   // 如果有进行中的订单，跳转到订单页面
   useEffect(() => {
@@ -50,8 +66,8 @@ export default function HomePage({ api }: HomePageProps) {
   // 路线规划完成后更新价格
   useEffect(() => {
     if (routeInfo) {
-      const dist = routeInfo.distance / 1000 // 转换为公里
-      const dur = routeInfo.duration / 60 // 转换为分钟
+      const dist = routeInfo.distance / 1000
+      const dur = routeInfo.duration / 60
       const pri = Math.round(dist * 2.5 + dur * 0.5 + 10)
 
       setDistance(Math.round(dist * 10) / 10)
@@ -59,6 +75,186 @@ export default function HomePage({ api }: HomePageProps) {
       setPrice(pri)
     }
   }, [routeInfo])
+
+  // 地图加载完成 - 初始化定位和搜索
+  const handleMapReady = useCallback((map: any, AMap: any) => {
+    mapRef.current = { map, AMap }
+    setAmapInstance(AMap)
+    setMapReady(true)
+
+    // 初始化 AutoComplete 插件
+    AMap.plugin(['AMap.AutoComplete'], () => {
+      const autoComplete = new AMap.AutoComplete({
+        city: '全国',
+        datatype: 'poi',
+        input: null, // 不绑定到具体 input，手动触发
+      })
+      autoCompleteRef.current = autoComplete
+    })
+
+    // 自动获取当前位置
+    getCurrentLocation(map, AMap)
+  }, [])
+
+  // 搜索地点（防抖）
+  const doSearch = useCallback((keyword: string, type: 'pickup' | 'destination') => {
+    if (!autoCompleteRef.current || !keyword.trim()) {
+      if (type === 'pickup') setPickupResults([])
+      else setDestResults([])
+      return
+    }
+
+    autoCompleteRef.current.search(keyword, (status: string, result: any) => {
+      if (status === 'complete' && result.tips) {
+        const results: SearchResult[] = result.tips
+          .filter((tip: any) => tip.location)
+          .map((tip: any) => ({
+            name: tip.name,
+            address: tip.district || '',
+            lng: tip.location.getLng(),
+            lat: tip.location.getLat(),
+          }))
+        if (type === 'pickup') setPickupResults(results)
+        else setDestResults(results)
+      } else {
+        if (type === 'pickup') setPickupResults([])
+        else setDestResults([])
+      }
+    })
+  }, [])
+
+  // 搜索输入变化
+  const handlePickupInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setPickupKeyword(value)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => doSearch(value, 'pickup'), 300)
+  }, [doSearch])
+
+  const handleDestInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setDestKeyword(value)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => doSearch(value, 'destination'), 300)
+  }, [doSearch])
+
+  // 选择搜索结果
+  const handlePickupSelect = useCallback((result: SearchResult) => {
+    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address + result.name }
+    setPickup(pos)
+    setPickupKeyword(result.name)
+    setPickupResults([])
+    setActiveInput(null)
+    if (mapRef.current?.map) {
+      mapRef.current.map.setCenter([pos.lng, pos.lat])
+    }
+  }, [setPickup])
+
+  const handleDestSelect = useCallback((result: SearchResult) => {
+    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address + result.name }
+    setDestination(pos)
+    setDestKeyword(result.name)
+    setDestResults([])
+    setActiveInput(null)
+    if (mapRef.current?.map) {
+      mapRef.current.map.setCenter([pos.lng, pos.lat])
+    }
+  }, [setDestination])
+
+  // 获取当前位置
+  const getCurrentLocation = useCallback((map?: any, AMap?: any) => {
+    const currentMap = map || mapRef.current?.map
+    const currentAMap = AMap || mapRef.current?.AMap
+
+    if (!currentMap || !currentAMap) return
+
+    setIsLocating(true)
+
+    currentAMap.plugin(['AMap.Geolocation'], () => {
+      const geolocation = new currentAMap.Geolocation({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        zoomToAccuracy: false,
+        GeoLocationFirst: false, // Electron中优先IP定位
+      })
+
+      geolocation.getCurrentPosition((status: string, result: any) => {
+        setIsLocating(false)
+        if (status === 'complete' && result.position) {
+          const pos: Position = {
+            lng: result.position.getLng(),
+            lat: result.position.getLat(),
+          }
+          setCurrentLocation(pos)
+          currentMap.setCenter([pos.lng, pos.lat])
+          reverseGeocode(pos, currentAMap)
+        } else {
+          console.warn('高德定位失败，使用IP精确定位API:', status)
+          locateWithIPApi(currentMap)
+        }
+      })
+    })
+  }, [reverseGeocode])
+
+  // 高德 IP 定位 REST API
+  const locateWithIPApi = useCallback(async (map: any) => {
+    setIsLocating(true)
+    try {
+      const resp = await fetch(
+        `https://restapi.amap.com/v3/ip?key=${AMAP_KEY}&output=JSON`
+      )
+      const data = await resp.json()
+      if (data.status === '1' && data.rectangle) {
+        const [p1, p2] = data.rectangle.split(';')
+        const [lng1, lat1] = p1.split(',').map(Number)
+        const [lng2, lat2] = p2.split(',').map(Number)
+        const pos: Position = {
+          lng: (lng1 + lng2) / 2,
+          lat: (lat1 + lat2) / 2,
+          address: data.province + data.city + data.district,
+        }
+        setCurrentLocation(pos)
+        map.setCenter([pos.lng, pos.lat])
+        map.setZoom(14)
+        console.log('IP定位结果:', data.city, data.district)
+      } else {
+        console.warn('IP定位API失败，使用默认位置')
+        setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
+      }
+    } catch (e) {
+      console.error('IP定位API请求失败:', e)
+      setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
+    } finally {
+      setIsLocating(false)
+    }
+  }, [])
+
+  // 逆地理编码
+  const reverseGeocode = useCallback((pos: Position, AMap: any) => {
+    AMap.plugin(['AMap.Geocoder'], () => {
+      const geocoder = new AMap.Geocoder()
+      geocoder.getAddress([pos.lng, pos.lat], (status: string, result: any) => {
+        if (status === 'complete' && result.regeocode) {
+          const address = result.regeocode.formattedAddress
+          setCurrentLocation(prev => prev ? { ...prev, address } : { ...pos, address })
+        }
+      })
+    })
+  }, [])
+
+  // 路线规划完成
+  const handleRouteComplete = useCallback((info: RouteInfo) => {
+    setRouteInfo(info)
+  }, [])
+
+  // 使用当前位置作为上车点
+  const handleUseCurrentLocation = () => {
+    if (currentLocation) {
+      const loc = { ...currentLocation, address: currentLocation.address || '当前位置' }
+      setPickup(loc)
+      setPickupKeyword(loc.address)
+    }
+  }
 
   const handleCallRide = async () => {
     if (!pickup || !destination) {
@@ -96,16 +292,6 @@ export default function HomePage({ api }: HomePageProps) {
     }
   }
 
-  // 地图加载完成
-  const handleMapReady = useCallback(() => {
-    setMapReady(true)
-  }, [])
-
-  // 路线规划完成
-  const handleRouteComplete = useCallback((info: RouteInfo) => {
-    setRouteInfo(info)
-  }, [])
-
   // 快速登录
   const handleQuickLogin = useCallback(async () => {
     try {
@@ -120,34 +306,23 @@ export default function HomePage({ api }: HomePageProps) {
     }
   }, [api])
 
-  // 检查是否有地图 Key
-  if (!AMAP_KEY || AMAP_KEY === 'your_amap_key_here') {
-    return (
-      <div className="home-page">
-        <div className="map-container">
-          <div className="map-error-message">
-            <h3>地图配置缺失</h3>
-            <p>请在 apps/passenger/.env 文件中配置高德地图 API Key</p>
-            <ol>
-              <li>访问 <a href="https://console.amap.com/dev/key/app" target="_blank" rel="noopener">高德开放平台</a></li>
-              <li>创建应用并获取 Web端(JS API) Key</li>
-              <li>将 Key 填入 .env 文件中的 VITE_AMAP_KEY</li>
-              <li>重启应用</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // 预设目的地选项
+  const presetDestinations = [
+    { name: '国贸CBD', lat: 39.9087, lng: 116.4602 },
+    { name: '中关村', lat: 39.9841, lng: 116.3074 },
+    { name: '北京站', lat: 39.9042, lng: 116.4273 },
+    { name: '首都机场', lat: 40.0799, lng: 116.6031 },
+  ]
+
+  // 点击外部关闭搜索结果
+  useEffect(() => {
+    const handleClickOutside = () => setActiveInput(null)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   return (
     <div className="home-page">
-      {/* 调试信息 */}
-      <div style={{ padding: '10px', background: '#e8f5e9', color: '#333', fontSize: '12px' }}>
-        <div>AMAP_KEY: {AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED'}</div>
-        <div>AMAP_SECURITY: {AMAP_SECURITY_CODE ? 'YES' : 'NO'}</div>
-      </div>
-
       {/* 地图区域 */}
       <div className="map-container">
         <MapView
@@ -158,7 +333,7 @@ export default function HomePage({ api }: HomePageProps) {
           onMapReady={handleMapReady}
         >
           {/* 当前位置 */}
-          {currentLocation && (
+          {currentLocation && !pickup && (
             <MapMarker
               position={currentLocation}
               type="origin"
@@ -193,49 +368,119 @@ export default function HomePage({ api }: HomePageProps) {
             />
           )}
         </MapView>
+
+        {/* 定位按钮 */}
+        <button
+          className="locate-button"
+          onClick={() => mapRef.current && getCurrentLocation()}
+          disabled={isLocating || !mapReady}
+        >
+          {isLocating ? '定位中...' : '📍 定位'}
+        </button>
       </div>
 
-      {/* 地点选择 */}
+      {/* 地点选择卡片 */}
       <div className="card">
-        <div className="location-item" onClick={() => {
-          // 使用当前位置作为上车点
-          if (currentLocation) {
-            setPickup({
-              ...currentLocation,
-              address: '当前位置'
-            })
-          } else {
-            setPickup({
-              address: '中关村软件园',
-              lat: 39.9841,
-              lng: 116.3074
-            })
-          }
-        }}>
-          <div className="location-icon pickup">📍</div>
-          <div className="location-info">
-            <div className="location-label">上车地点</div>
-            <div className="location-address">
-              {pickup?.address || '点击选择上车地点'}
-            </div>
+        {/* 上车点搜索 */}
+        <div className="location-input-group">
+          <div className="location-input-icon pickup-icon">📍</div>
+          <div className="location-input-wrapper">
+            <div className="location-input-label">上车地点</div>
+            <input
+              type="text"
+              className="location-input"
+              placeholder="搜索或输入上车地点"
+              value={pickupKeyword}
+              onChange={handlePickupInput}
+              onFocus={(e) => {
+                e.stopPropagation()
+                setActiveInput('pickup')
+              }}
+            />
           </div>
         </div>
 
-        <div className="location-item" onClick={() => {
-          setDestination({
-            address: '国贸CBD',
-            lat: 39.9087,
-            lng: 116.4602
-          })
-        }}>
-          <div className="location-icon destination">🎯</div>
-          <div className="location-info">
-            <div className="location-label">目的地</div>
-            <div className="location-address">
-              {destination?.address || '点击选择目的地'}
-            </div>
+        {/* 上车点搜索结果 */}
+        {activeInput === 'pickup' && pickupResults.length > 0 && (
+          <div className="search-results">
+            {pickupResults.map((result, index) => (
+              <div
+                key={index}
+                className="search-result-item"
+                onClick={(e) => { e.stopPropagation(); handlePickupSelect(result) }}
+              >
+                <div className="search-result-name">{result.name}</div>
+                <div className="search-result-address">{result.address}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 使用当前位置 */}
+        {!pickup && currentLocation && (
+          <div className="use-current-location" onClick={handleUseCurrentLocation}>
+            使用当前位置
+          </div>
+        )}
+
+        <div className="location-divider"></div>
+
+        {/* 目的地搜索 */}
+        <div className="location-input-group">
+          <div className="location-input-icon dest-icon">🎯</div>
+          <div className="location-input-wrapper">
+            <div className="location-input-label">目的地</div>
+            <input
+              type="text"
+              className="location-input"
+              placeholder="搜索或输入目的地"
+              value={destKeyword}
+              onChange={handleDestInput}
+              onFocus={(e) => {
+                e.stopPropagation()
+                setActiveInput('destination')
+              }}
+            />
           </div>
         </div>
+
+        {/* 目的地搜索结果 */}
+        {activeInput === 'destination' && destResults.length > 0 && (
+          <div className="search-results">
+            {destResults.map((result, index) => (
+              <div
+                key={index}
+                className="search-result-item"
+                onClick={(e) => { e.stopPropagation(); handleDestSelect(result) }}
+              >
+                <div className="search-result-name">{result.name}</div>
+                <div className="search-result-address">{result.address}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 预设目的地 */}
+        {!destination && (
+          <div className="preset-destinations">
+            <div className="preset-label">热门目的地：</div>
+            <div className="preset-list">
+              {presetDestinations.map(dest => (
+                <button
+                  key={dest.name}
+                  className="preset-btn"
+                  onClick={() => {
+                    const pos: Position = { address: dest.name, lat: dest.lat, lng: dest.lng }
+                    setDestination(pos)
+                    setDestKeyword(dest.name)
+                  }}
+                >
+                  {dest.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 价格预估 */}

@@ -68,11 +68,9 @@ function loadAMapScript(key: string, securityCode?: string): Promise<typeof AMap
     script.src = `https://webapi.amap.com/maps?v=2.0&key=${key}`;
     script.onload = () => {
       isScriptLoaded = true;
-      console.log('高德地图脚本加载成功');
       resolve((window as any).AMap);
     };
-    script.onerror = (e) => {
-      console.error('高德地图脚本加载失败:', e);
+    script.onerror = () => {
       reject(new Error('高德地图脚本加载失败'));
     };
     document.head.appendChild(script);
@@ -96,6 +94,10 @@ const MapView: React.FC<MapViewProps> = ({
   onMapReady,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<AMap.Map | null>(null);
+  const isInitializedRef = useRef(false);
+  const clickHandlerRef = useRef<any>(null);
+
   const [mapInstance, setMapInstance] = useState<AMap.Map | null>(null);
   const [AMapInstance, setAMapInstance] = useState<typeof AMap | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -111,8 +113,12 @@ const MapView: React.FC<MapViewProps> = ({
     return styles[theme];
   }, []);
 
-  // 初始化地图
+  // 初始化地图 - 只执行一次
   useEffect(() => {
+    if (isInitializedRef.current) {
+      return;
+    }
+
     if (!containerRef.current) {
       setError('地图容器未找到');
       return;
@@ -123,52 +129,45 @@ const MapView: React.FC<MapViewProps> = ({
       return;
     }
 
-    console.log('正在加载高德地图, Key:', amapKey.substring(0, 8) + '...');
-
-    let map: AMap.Map | null = null;
+    isInitializedRef.current = true;
 
     loadAMapScript(amapKey, securityJsCode)
       .then((AMap) => {
-        if (!containerRef.current) return;
-
-        console.log('创建地图实例...');
-
-        // 创建地图实例 - 使用官方示例的方式
-        map = new AMap.Map(containerRef.current, {
-          zoom: zoom,
-          center: [center.lng, center.lat],
-          viewMode: '2D',
-          mapStyle: getMapStyle(theme),
-          dragEnable: enableDrag,
-          zoomEnable: true,
-          resizeEnable: true,
-        });
-
-        // 点击事件
-        if (enableClick && onMapClick) {
-          map.on('click', (e: any) => {
-            const position: Position = {
-              lng: e.lnglat.getLng(),
-              lat: e.lnglat.getLat(),
-            };
-            onMapClick(position);
-          });
+        if (!containerRef.current || mapRef.current) {
+          return;
         }
 
-        setMapInstance(map);
-        setAMapInstance(() => AMap);
-        setIsLoaded(true);
-        setError(null);
+        try {
+          // 创建地图实例
+          const map = new AMap.Map(containerRef.current, {
+            zoom: zoom,
+            center: [center.lng, center.lat],
+            viewMode: '2D',
+            mapStyle: getMapStyle(theme),
+            dragEnable: enableDrag,
+            zoomEnable: true,
+            resizeEnable: true,
+          });
 
-        console.log('地图加载成功!');
+          mapRef.current = map;
 
-        // 回调
-        if (onMapReady) {
-          onMapReady(map, AMap);
+          setMapInstance(map);
+          setAMapInstance(() => AMap);
+          setIsLoaded(true);
+          setError(null);
+
+          // 回调
+          if (onMapReady) {
+            onMapReady(map, AMap);
+          }
+        } catch (e: any) {
+          console.error('[MapView] Error creating map:', e);
+          setError(e.message || '创建地图失败');
+          isInitializedRef.current = false;
         }
       })
       .catch((e) => {
-        console.error('地图加载失败:', e);
+        console.error('[MapView] Map load failed:', e);
         let errorMsg = typeof e === 'string' ? e : (e.message || '地图加载失败');
 
         if (errorMsg.includes('INVALID_USER_KEY') || errorMsg.includes('USERKEY')) {
@@ -178,44 +177,73 @@ const MapView: React.FC<MapViewProps> = ({
         }
 
         setError(errorMsg);
+        isInitializedRef.current = false;
       });
 
+    // Cleanup - 只在组件卸载时执行
     return () => {
-      if (map) {
-        map.destroy();
+      if (mapRef.current) {
+        mapRef.current.destroy();
+        mapRef.current = null;
+        isInitializedRef.current = false;
       }
     };
-  }, [amapKey, securityJsCode]);
+  }, []); // 空依赖数组 - 只在挂载时执行一次
+
+  // 动态处理点击事件
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // 移除旧的点击处理器
+    if (clickHandlerRef.current) {
+      map.off('click', clickHandlerRef.current);
+      clickHandlerRef.current = null;
+    }
+
+    // 如果启用点击，添加新的处理器
+    if (enableClick && onMapClick) {
+      const handler = (e: any) => {
+        const position: Position = {
+          lng: e.lnglat.getLng(),
+          lat: e.lnglat.getLat(),
+        };
+        onMapClick(position);
+      };
+      map.on('click', handler);
+      clickHandlerRef.current = handler;
+    }
+  }, [enableClick, onMapClick]);
 
   // 更新中心点
   useEffect(() => {
-    if (mapInstance) {
-      mapInstance.setCenter([center.lng, center.lat]);
+    if (mapRef.current) {
+      mapRef.current.setCenter([center.lng, center.lat]);
     }
-  }, [center.lng, center.lat, mapInstance]);
+  }, [center.lng, center.lat]);
 
   // 更新缩放级别
   useEffect(() => {
-    if (mapInstance) {
-      mapInstance.setZoom(zoom);
+    if (mapRef.current) {
+      mapRef.current.setZoom(zoom);
     }
-  }, [zoom, mapInstance]);
+  }, [zoom]);
 
   // 更新主题
   useEffect(() => {
-    if (mapInstance) {
-      (mapInstance as any).setMapStyle(getMapStyle(theme));
+    if (mapRef.current) {
+      (mapRef.current as any).setMapStyle(getMapStyle(theme));
     }
-  }, [theme, mapInstance, getMapStyle]);
+  }, [theme, getMapStyle]);
 
   // 更新拖拽状态
   useEffect(() => {
-    if (mapInstance) {
-      (mapInstance as any).setStatus({
+    if (mapRef.current) {
+      (mapRef.current as any).setStatus({
         dragEnable: enableDrag,
       });
     }
-  }, [enableDrag, mapInstance]);
+  }, [enableDrag]);
 
   return (
     <MapContext.Provider value={{ map: mapInstance, AMap: AMapInstance, isLoaded }}>

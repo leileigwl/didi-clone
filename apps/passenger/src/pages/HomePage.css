@@ -5,120 +5,11 @@
 /* 地图区域 */
 .map-container {
   width: 100%;
-  height: 280px;
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+  height: 500px;
   border-radius: 12px;
   margin-bottom: 16px;
   overflow: hidden;
   position: relative;
-}
-
-.map-content {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.map-background {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
-}
-
-.map-grid-lines {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* 道路 */
-.road {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.road-horizontal {
-  height: 8px;
-  left: 0;
-  right: 0;
-  border-radius: 4px;
-}
-
-.road-vertical {
-  width: 8px;
-  top: 0;
-  bottom: 0;
-  border-radius: 4px;
-}
-
-/* 地图标记 */
-.map-marker {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 10;
-  transform: translate(-50%, -50%);
-}
-
-.pickup-marker {
-  top: 70%;
-  left: 20%;
-}
-
-.destination-marker {
-  top: 30%;
-  left: 80%;
-}
-
-.marker-icon {
-  font-size: 24px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.marker-label {
-  margin-top: 4px;
-  padding: 2px 8px;
-  background: white;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  white-space: nowrap;
-}
-
-/* 模拟车辆 */
-.map-car {
-  position: absolute;
-  font-size: 20px;
-  animation: car-bounce 2s ease-in-out infinite;
-  transform: translate(-50%, -50%);
-}
-
-.car-1 { top: 30%; left: 60%; animation-delay: 0s; }
-.car-2 { top: 50%; left: 25%; animation-delay: 0.3s; }
-.car-3 { top: 70%; left: 70%; animation-delay: 0.6s; }
-
-@keyframes car-bounce {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-  50% { transform: translate(-50%, -50%) translateY(-3px); }
-}
-
-/* 地图提示 */
-.map-hint {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  font-size: 12px;
-  color: #666;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 价格详情 */
@@ -149,4 +40,174 @@
 
 .login-hint-text {
   margin-bottom: 8px;
+}
+
+/* 定位按钮 */
+.locate-button {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  background: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.locate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 地点输入组 */
+.location-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.location-input-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.location-input-wrapper {
+  flex: 1;
+}
+
+.location-input-label {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.location-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #333;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.location-input::placeholder {
+  color: #bbb;
+}
+
+/* 分割线 */
+.location-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 0 16px;
+}
+
+/* 搜索结果 */
+.search-results {
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0 8px 8px;
+}
+
+.search-result-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: #f8f8f8;
+}
+
+.search-result-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.search-result-address {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 使用当前位置 */
+.use-current-location {
+  padding: 8px 16px;
+  color: #FF6B00;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  border-top: 1px solid #eee;
+}
+
+.use-current-location:hover {
+  background: #fff7e6;
+}
+
+/* 预设目的地 */
+.preset-destinations {
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+}
+
+.preset-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset-btn {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.preset-btn:hover {
+  background: #FF6B00;
+  color: white;
+}
+
+/* 价格显示 */
+.price-display {
+  text-align: center;
+}
+
+.price-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.price-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #FF6B00;
+}
+
+.price-unit {
+  font-size: 16px;
+  font-weight: 400;
 }

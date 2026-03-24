@@ -10,6 +10,14 @@ import {
   drivers
 } from '../store'
 import { authMiddleware } from '../middleware/auth'
+import { broadcastToNearbyDrivers } from '../socket'
+import type { Server } from 'socket.io'
+
+let io: Server | null = null
+
+export function setSocketServerForOrders(socketServer: Server) {
+  io = socketServer
+}
 
 const router = Router()
 
@@ -43,6 +51,17 @@ router.post('/', (req, res) => {
     userId: req.user!.userId,
     ...result.data
   })
+
+  // Broadcast to nearby drivers via socket
+  if (io) {
+    broadcastToNearbyDrivers(io, order.id, order.pickup, {
+      pickup: order.pickup,
+      destination: order.destination,
+      price: order.price,
+      distance: order.distance,
+      duration: order.duration,
+    })
+  }
 
   res.status(201).json(success(order, 'Order created successfully'))
 })

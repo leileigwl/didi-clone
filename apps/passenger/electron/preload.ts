@@ -5,7 +5,10 @@ const passengerAPI = {
   maximize: () => ipcRenderer.invoke('passenger:maximize'),
   close: () => ipcRenderer.invoke('passenger:close'),
   openExternal: (url: string) => ipcRenderer.invoke('passenger:open-external', url),
-  platform: process.platform
+  platform: process.platform,
+  // Location permission
+  requestLocationPermission: () => ipcRenderer.invoke('passenger:request-location-permission'),
+  openLocationSettings: () => ipcRenderer.invoke('passenger:open-location-settings')
 }
 
 contextBridge.exposeInMainWorld('passengerAPI', passengerAPI)

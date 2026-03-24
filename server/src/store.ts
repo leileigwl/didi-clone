@@ -168,7 +168,7 @@ export function getNearbyDrivers(lat: number, lng: number, radiusKm = 5): Driver
 }
 
 // Haversine formula for distance calculation
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371 // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180

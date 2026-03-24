@@ -17,6 +17,10 @@ const electronAPI = {
   minimize: () => ipcRenderer.invoke('driver:minimize'),
   maximize: () => ipcRenderer.invoke('driver:maximize'),
 
+  // Location permission
+  requestLocationPermission: () => ipcRenderer.invoke('driver:request-location-permission'),
+  openLocationSettings: () => ipcRenderer.invoke('driver:open-location-settings'),
+
   // Event listeners
   onNewOrder: (callback) => {
     ipcRenderer.on('new-order', (_event, order) => callback(order))

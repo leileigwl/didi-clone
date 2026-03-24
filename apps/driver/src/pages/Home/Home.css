@@ -3,15 +3,15 @@
   max-width: 100%;
   margin: 0;
   min-height: 100vh;
-  background: #1a1a2e;
-  color: #ffffff;
+  background: #f5f5f5;
+  color: #333;
 }
 
 /* Map Section */
 .map-section {
   position: relative;
   width: 100%;
-  height: 350px;
+  height: 500px;
   margin-bottom: 20px;
 }
 
@@ -41,13 +41,13 @@
 }
 
 .map-overlay .online-toggle-btn.online {
-  background: linear-gradient(135deg, #7AC9A8 0%, #5BA887 100%);
-  color: #1a1a2e;
+  background: linear-gradient(135deg, #FF6B00 0%, #e55d00 100%);
+  color: white;
 }
 
 .map-overlay .online-toggle-btn.offline {
-  background: #2d2d44;
-  color: #888;
+  background: #ccc;
+  color: #666;
 }
 
 .map-overlay .status-dot {
@@ -58,7 +58,7 @@
 }
 
 .map-overlay .status-dot.online {
-  background: #1a1a2e;
+  background: white;
 }
 
 .location-info-bar {
@@ -67,12 +67,12 @@
   left: 0;
   right: 0;
   padding: 12px 16px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #fff;
+  color: #333;
 }
 
 .location-info-bar .location-icon {
@@ -81,7 +81,7 @@
 
 .distance-info {
   margin-left: auto;
-  color: #7AC9A8;
+  color: #FF6B00;
   font-weight: 500;
 }
 
@@ -95,7 +95,7 @@
 }
 
 .map-error h3 {
-  color: #E8A45C;
+  color: #FF6B00;
   margin-bottom: 12px;
 }
 
@@ -107,19 +107,20 @@
 .current-order-section h2 {
   font-size: 18px;
   margin-bottom: 12px;
-  color: #E8A45C;
+  color: #FF6B00;
 }
 
 .current-order-card {
-  background: #2d2d44;
+  background: white;
   border-radius: 16px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .current-order-card:hover {
-  background: #3d3d54;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .order-route {
@@ -148,7 +149,7 @@
 }
 
 .route-arrow {
-  color: #E8A45C;
+  color: #FF6B00;
   font-size: 20px;
 }
 
@@ -160,8 +161,8 @@
 }
 
 .order-status {
-  background: #E8A45C;
-  color: #1a1a2e;
+  background: #FF6B00;
+  color: white;
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -171,14 +172,14 @@
 .order-price {
   font-size: 20px;
   font-weight: 600;
-  color: #7AC9A8;
+  color: #FF6B00;
 }
 
 .view-order-btn {
   width: 100%;
   padding: 12px;
-  background: #E8A45C;
-  color: #1a1a2e;
+  background: #FF6B00;
+  color: white;
   border: none;
   border-radius: 12px;
   font-size: 16px;
@@ -188,7 +189,7 @@
 }
 
 .view-order-btn:hover {
-  background: #d4944d;
+  background: #e55d00;
 }
 
 /* Pending Orders Section */
@@ -199,7 +200,7 @@
 .pending-orders-section h2 {
   font-size: 18px;
   margin-bottom: 12px;
-  color: #E8A45C;
+  color: #FF6B00;
 }
 
 .pending-orders-list {
@@ -232,7 +233,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2px solid #7AC9A8;
+  border: 2px solid #FF6B00;
   animation: pulse 2s ease-out infinite;
 }
 
@@ -263,7 +264,7 @@
 .waiting-text {
   margin-top: 24px;
   font-size: 16px;
-  color: #888;
+  color: #999;
 }
 
 /* Offline Message */
@@ -300,15 +301,16 @@
 .earnings-section h2 {
   font-size: 18px;
   margin-bottom: 12px;
-  color: #E8A45C;
+  color: #FF6B00;
 }
 
 .earnings-card {
-  background: linear-gradient(135deg, #2d2d44 0%, #3d3d54 100%);
+  background: white;
   border-radius: 16px;
   padding: 24px;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .earnings-card:hover {
@@ -323,14 +325,14 @@
 
 .earnings-amount .currency {
   font-size: 24px;
-  color: #7AC9A8;
+  color: #FF6B00;
   margin-right: 4px;
 }
 
 .earnings-amount .amount {
   font-size: 48px;
   font-weight: 700;
-  color: #7AC9A8;
+  color: #FF6B00;
 }
 
 .earnings-stats {
@@ -338,7 +340,7 @@
   gap: 32px;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #4d4d64;
+  border-bottom: 1px solid #eee;
 }
 
 .stat {
@@ -349,12 +351,12 @@
 .stat-value {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: #333;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #888;
+  color: #999;
   margin-top: 4px;
 }
 
@@ -362,7 +364,42 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #E8A45C;
+  color: #FF6B00;
   font-size: 14px;
   font-weight: 500;
+}
+
+/* Location Denied Banner */
+.location-denied-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #ff6b6b20 0%, #ff8e8e20 100%);
+  border: 1px solid #ff6b6b;
+  border-radius: 8px;
+  margin: 8px 16px;
+  color: #ff8e8e;
+  font-size: 13px;
+}
+
+.location-denied-banner .warning-icon {
+  font-size: 18px;
+}
+
+.location-denied-banner .open-settings-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.location-denied-banner .open-settings-btn:hover {
+  background: #ff5252;
 }

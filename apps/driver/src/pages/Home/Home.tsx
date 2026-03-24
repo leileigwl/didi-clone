@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
+import { useSocket } from '../../hooks/useSocket'
 import { MapView, MapMarker, MapRoute, DriverTracker, type Position, type RouteInfo } from '@didi/ui'
 import StatusBar from '../../components/StatusBar/StatusBar'
 import OrderCard from '../../components/OrderCard/OrderCard'
 import './Home.css'
 
-// 高德地图 Key - 直接配置测试
+// 高德地图 Key
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '7bf10417175742fc23ec515c46599e8d'
 const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6b5a0df9c012c82a33684e15'
-
-// Debug: 输出 key 状态（不输出完整 key）
-console.log('Driver Amap Key loaded:', AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED')
-console.log('Driver Security Code loaded:', AMAP_SECURITY_CODE ? 'YES' : 'NO')
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
@@ -26,17 +23,27 @@ const Home: React.FC = () => {
     rejectOrder
   } = useDriverStore()
 
+  const { emitDriverOnline, emitLocation, acceptOrder: socketAcceptOrder } = useSocket()
+
   const [driverLocation, setDriverLocation] = useState<Position>({ lng: 116.397428, lat: 39.90923 })
   const [routePath, setRoutePath] = useState<Position[]>([])
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
+  const [locationDenied, setLocationDenied] = useState(false)
+  const [currentAddress, setCurrentAddress] = useState('定位中...')
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline
     setOnline(newStatus)
     await window.electronAPI?.setOnline(newStatus)
+
+    if (newStatus) {
+      // 注册到服务器并开始上报位置
+      emitDriverOnline(driverLocation.lat, driverLocation.lng)
+    }
   }
 
   const handleAcceptOrder = (orderId: string) => {
+    socketAcceptOrder(orderId)
     acceptOrder(orderId)
     navigate(`/order/${orderId}`)
   }
@@ -51,29 +58,118 @@ const Home: React.FC = () => {
     }
   }
 
+  // 打开系统定位设置
+  const handleOpenLocationSettings = async () => {
+    if (window.electronAPI?.openLocationSettings) {
+      await window.electronAPI.openLocationSettings()
+    }
+  }
+
   // 路线规划完成
   const handleRouteComplete = useCallback((info: RouteInfo) => {
     setRouteInfo(info)
   }, [])
 
-  // 模拟获取司机位置
-  useEffect(() => {
-    if (isOnline && navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setDriverLocation({
-            lng: position.coords.longitude,
-            lat: position.coords.latitude
-          })
-        },
-        (error) => {
-          console.warn('定位失败，使用模拟位置')
-        },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+  // 逆地理编码
+  const reverseGeocode = useCallback((lng: number, lat: number, AMap: any) => {
+    AMap.plugin(['AMap.Geocoder'], () => {
+      const geocoder = new AMap.Geocoder()
+      geocoder.getAddress([lng, lat], (status: string, result: any) => {
+        if (status === 'complete' && result.regeocode) {
+          setCurrentAddress(result.regeocode.formattedAddress)
+        } else {
+          setCurrentAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+        }
+      })
+    })
+  }, [])
+
+  // 高德 IP 定位 REST API（比 CitySearch 精确，能到区/县级）
+  const locateWithIPApi = useCallback(async (_AMap: any, map: any) => {
+    try {
+      const resp = await fetch(
+        `https://restapi.amap.com/v3/ip?key=${AMAP_KEY}&output=JSON`
       )
-      return () => navigator.geolocation.clearWatch(watchId)
+      const data = await resp.json()
+      if (data.status === '1' && data.rectangle) {
+        // rectangle 格式: "lng1,lat1;lng2,lat2" 取中心点
+        const [p1, p2] = data.rectangle.split(';')
+        const [lng1, lat1] = p1.split(',').map(Number)
+        const [lng2, lat2] = p2.split(',').map(Number)
+        const lng = (lng1 + lng2) / 2
+        const lat = (lat1 + lat2) / 2
+        const pos = { lng, lat }
+        setDriverLocation(pos)
+        if (map) {
+          map.setCenter([lng, lat])
+        }
+        setCurrentAddress(data.province + data.city + data.district)
+        console.log('IP定位结果:', data.city, data.district, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`)
+      } else {
+        console.warn('IP定位API失败，使用默认位置')
+      }
+    } catch (e) {
+      console.error('IP定位API请求失败:', e)
     }
-  }, [isOnline])
+  }, [])
+
+  // 使用高德插件定位
+  const locateWithAmap = useCallback((AMap: any, map: any) => {
+    AMap.plugin(['AMap.Geolocation'], () => {
+      const geolocation = new AMap.Geolocation({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        zoomToAccuracy: false,
+        GeoLocationFirst: false, // 优先用IP定位（Electron中HTML5定位不准）
+      })
+
+      geolocation.getCurrentPosition((status: string, result: any) => {
+        if (status === 'complete' && result.position) {
+          const lng = result.position.getLng()
+          const lat = result.position.getLat()
+          setDriverLocation({ lng, lat })
+          setLocationDenied(false)
+          if (map) {
+            map.setCenter([lng, lat])
+          }
+          reverseGeocode(lng, lat, AMap)
+        } else {
+          console.warn('高德定位失败，使用IP精确定位API:', status)
+          locateWithIPApi(AMap, map)
+        }
+      })
+
+      // 如果在线，持续追踪位置
+      if (isOnline && map) {
+        map.addControl(geolocation)
+        geolocation.watchPosition()
+      }
+    })
+  }, [isOnline, reverseGeocode, locateWithIPApi])
+
+  // 地图加载完成后定位
+  const handleMapReady = useCallback((map: any, AMap: any) => {
+    locateWithAmap(AMap, map)
+  }, [locateWithAmap])
+
+  // 位置变化时上报给服务器
+  useEffect(() => {
+    if (isOnline && driverLocation.lat !== 39.90923) {
+      emitLocation(driverLocation.lat, driverLocation.lng)
+    }
+  }, [driverLocation, isOnline, emitLocation])
+
+  // 请求macOS定位权限
+  useEffect(() => {
+    if (window.electronAPI?.requestLocationPermission) {
+      window.electronAPI.requestLocationPermission().then((result: any) => {
+        console.log('Location permission:', result)
+        if (result.status === 'denied') {
+          setLocationDenied(true)
+        }
+      })
+    }
+  }, [])
 
   // 检查地图配置
   if (!AMAP_KEY || AMAP_KEY === 'your_amap_web_key_here') {
@@ -92,12 +188,6 @@ const Home: React.FC = () => {
     <div className="home-container">
       <StatusBar />
 
-      {/* 调试信息 */}
-      <div style={{ padding: '10px', background: '#2d2d44', color: '#fff', fontSize: '12px' }}>
-        <div>AMAP_KEY: {AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED'}</div>
-        <div>AMAP_SECURITY: {AMAP_SECURITY_CODE ? 'YES' : 'NO'}</div>
-      </div>
-
       {/* 地图区域 */}
       <div className="map-section">
         <MapView
@@ -105,7 +195,8 @@ const Home: React.FC = () => {
           securityJsCode={AMAP_SECURITY_CODE}
           center={driverLocation}
           zoom={14}
-          theme="dark"
+          theme="normal"
+          onMapReady={handleMapReady}
         >
           {/* 司机位置 */}
           <MapMarker
@@ -150,13 +241,24 @@ const Home: React.FC = () => {
         {/* 司机位置信息 */}
         <div className="location-info-bar">
           <span className="location-icon">📍</span>
-          <span>当前位置: 北京市中心</span>
+          <span>当前位置: {currentAddress}</span>
           {routeInfo && (
             <span className="distance-info">
               距乘客 {Math.round(routeInfo.distance / 1000 * 10) / 10} 公里
             </span>
           )}
         </div>
+
+        {/* 定位权限被拒绝提示 */}
+        {locationDenied && (
+          <div className="location-denied-banner">
+            <span className="warning-icon">⚠️</span>
+            <span>定位权限被拒绝，无法获取精确位置</span>
+            <button onClick={handleOpenLocationSettings} className="open-settings-btn">
+              打开设置
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 当前订单 */}

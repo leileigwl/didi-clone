@@ -41,47 +41,85 @@ export function useSocket() {
     }
   }, [])
 
-  // Handle online/offline status
+  // Handle online/offline status - emit location to server
   useEffect(() => {
     const socket = socketRef.current
     if (!socket) return
 
     if (isOnline) {
       socket.connect()
-      socket.emit('driver:online')
     } else {
-      socket.emit('driver:offline')
+      socket.emit('driver:offline', { driverId: 'driver-1' })
       socket.disconnect()
     }
   }, [isOnline])
 
-  // Listen for new orders
+  // Listen for new orders (matches server's broadcastToNearbyDrivers)
   useEffect(() => {
     const socket = socketRef.current
     if (!socket) return
 
-    const handleNewOrder = (order: Order) => {
-      console.log('New order received:', order)
+    const handleNewOrder = (data: any) => {
+      console.log('New order received:', data)
+      const order: Order = {
+        id: data.orderId,
+        userId: '',
+        status: 'pending',
+        pickup: data.pickup,
+        destination: data.destination,
+        price: data.price,
+        distance: data.distance,
+        duration: data.duration,
+        createdAt: new Date(data.timestamp),
+        updatedAt: new Date(data.timestamp),
+      }
       addPendingOrder(order)
 
-      // Send notification via Electron
-      if (window.electronAPI) {
-        // Could trigger a system notification here
-        new Notification('New Order!', {
-          body: `From ${order.pickup.address} to ${order.destination.address}`,
-          icon: '/icon.png'
+      if (window.Notification) {
+        new Notification('新订单!', {
+          body: `${data.pickup.address} → ${data.destination.address} · ¥${data.price}`,
         })
       }
     }
 
-    socket.on('order:new', handleNewOrder)
+    socket.on('new:order', handleNewOrder)
 
     return () => {
-      socket.off('order:new', handleNewOrder)
+      socket.off('new:order', handleNewOrder)
     }
   }, [addPendingOrder])
 
-  // Listen for order cancellations
+  // Listen for order accepted confirmation
+  useEffect(() => {
+    const socket = socketRef.current
+    if (!socket) return
+
+    const handleAccepted = (data: any) => {
+      console.log('Order accepted:', data)
+      const order: Order = {
+        id: data.orderId,
+        userId: '',
+        status: 'accepted',
+        pickup: data.pickup,
+        destination: data.destination,
+        price: data.price,
+        distance: 0,
+        duration: 0,
+        createdAt: new Date(data.timestamp),
+        updatedAt: new Date(data.timestamp),
+      }
+      setCurrentOrder(order)
+      removePendingOrder(data.orderId)
+    }
+
+    socket.on('order:accepted', handleAccepted)
+
+    return () => {
+      socket.off('order:accepted', handleAccepted)
+    }
+  }, [setCurrentOrder, removePendingOrder])
+
+  // Listen for order cancelled
   useEffect(() => {
     const socket = socketRef.current
     if (!socket) return
@@ -89,14 +127,6 @@ export function useSocket() {
     const handleOrderCancelled = (data: { orderId: string }) => {
       console.log('Order cancelled:', data.orderId)
       removePendingOrder(data.orderId)
-
-      // Show notification
-      if (window.Notification) {
-        new Notification('Order Cancelled', {
-          body: 'The passenger has cancelled this order',
-          icon: '/icon.png'
-        })
-      }
     }
 
     socket.on('order:cancelled', handleOrderCancelled)
@@ -106,20 +136,12 @@ export function useSocket() {
     }
   }, [removePendingOrder])
 
-  // Listen for order status updates
-  useEffect(() => {
+  // Emit driver online with location
+  const emitDriverOnline = useCallback((lat: number, lng: number) => {
     const socket = socketRef.current
-    if (!socket) return
-
-    const handleOrderStatus = (data: { orderId: string; status: string }) => {
-      console.log('Order status update:', data)
-      // Handle status updates if needed
-    }
-
-    socket.on('order:status', handleOrderStatus)
-
-    return () => {
-      socket.off('order:status', handleOrderStatus)
+    if (socket && socket.connected) {
+      socket.emit('driver:online', { driverId: 'driver-1', lat, lng })
+      console.log('Emitted driver:online', lat, lng)
     }
   }, [])
 
@@ -127,40 +149,32 @@ export function useSocket() {
   const emitLocation = useCallback((lat: number, lng: number) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('driver:location', { lat, lng })
+      socket.emit('driver:location', { driverId: 'driver-1', lat, lng })
       setLocation({ address: '', lat, lng })
     }
   }, [setLocation])
 
-  // Accept order
+  // Accept order via socket
   const acceptOrder = useCallback((orderId: string) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('order:accept', { orderId })
+      socket.emit('driver:accept', { orderId, driverId: 'driver-1' })
     }
   }, [])
 
-  // Reject order
+  // Reject order via socket
   const rejectOrder = useCallback((orderId: string) => {
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('order:reject', { orderId })
-    }
-  }, [])
-
-  // Update order status
-  const updateOrderStatus = useCallback((orderId: string, status: string) => {
-    const socket = socketRef.current
-    if (socket && socket.connected) {
-      socket.emit('order:update-status', { orderId, status })
+      socket.emit('driver:reject', { orderId })
     }
   }, [])
 
   return {
+    emitDriverOnline,
     emitLocation,
     acceptOrder,
     rejectOrder,
-    updateOrderStatus
   }
 }
 

@@ -5,12 +5,10 @@ let mainWindow: BrowserWindow | null = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 700,
-    minWidth: 350,
+    width: 1200,
+    height: 800,
+    minWidth: 900,
     minHeight: 600,
-    maxWidth: 500,
-    maxHeight: 900,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -21,6 +19,15 @@ function createWindow() {
     backgroundColor: '#FF6B00',
     show: false,
     resizable: true
+  })
+
+  // 请求定位权限
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'geolocation') {
+      callback(true) // 允许定位
+    } else {
+      callback(true) // 允许其他权限
+    }
   })
 
   mainWindow.once('ready-to-show', () => {
@@ -73,6 +80,22 @@ ipcMain.handle('passenger:close', () => {
 
 ipcMain.handle('passenger:open-external', async (_event, url: string) => {
   await shell.openExternal(url)
+  return true
+})
+
+// 请求macOS定位权限 - 注意: Electron的systemPreferences不支持location类型
+// 定位权限由浏览器geolocation API自动触发macOS系统对话框
+ipcMain.handle('passenger:request-location-permission', async () => {
+  // 在macOS上，当webContent请求geolocation时，系统会自动弹出权限对话框
+  // Info.plist中的NSLocationWhenInUseUsageDescription已经配置
+  return { granted: true, status: 'prompt' }
+})
+
+// 打开系统偏好设置的定位服务
+ipcMain.handle('passenger:open-location-settings', async () => {
+  if (process.platform === 'darwin') {
+    await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
+  }
   return true
 })
 
