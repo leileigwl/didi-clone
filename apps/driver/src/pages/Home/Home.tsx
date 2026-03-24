@@ -25,7 +25,9 @@ const Home: React.FC = () => {
 
   const { emitDriverOnline, emitLocation, acceptOrder: socketAcceptOrder } = useSocket()
 
-  const [driverLocation, setDriverLocation] = useState<Position>({ lng: 116.397428, lat: 39.90923 })
+  // 义乌市中心坐标作为默认位置
+  const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306 }
+  const [driverLocation, setDriverLocation] = useState<Position>(DEFAULT_YIWU)
   const [routePath, setRoutePath] = useState<Position[]>([])
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
@@ -113,10 +115,13 @@ const Home: React.FC = () => {
   const locateWithAmap = useCallback((AMap: any, map: any) => {
     AMap.plugin(['AMap.Geolocation'], () => {
       const geolocation = new AMap.Geolocation({
-        enableHighAccuracy: true,
+        enableHighAccuracy: false,     // Electron中不需要GPS
         timeout: 10000,
         zoomToAccuracy: false,
-        GeoLocationFirst: false, // 优先用IP定位（Electron中HTML5定位不准）
+        GeoLocationFirst: false,       // 不优先HTML5定位
+        noGeoLocation: 2,              // 禁用PC端浏览器定位（Electron中会超时）
+        noIpLocate: 0,                 // 启用高精度IP定位
+        extensions: 'all',             // 返回完整信息（含格式化地址）
       })
 
       geolocation.getCurrentPosition((status: string, result: any) => {
@@ -128,9 +133,15 @@ const Home: React.FC = () => {
           if (map) {
             map.setCenter([lng, lat])
           }
-          reverseGeocode(lng, lat, AMap)
+          // 优先使用Geolocation返回的地址，避免额外逆地理编码请求
+          if (result.formattedAddress) {
+            setCurrentAddress(result.formattedAddress)
+          } else {
+            reverseGeocode(lng, lat, AMap)
+          }
+          console.log('定位成功:', result.formattedAddress, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, 'type:', result.location_type)
         } else {
-          console.warn('高德定位失败，使用IP精确定位API:', status)
+          console.warn('高德定位失败，使用CitySearch作为后备:', status)
           locateWithIPApi(AMap, map)
         }
       })
@@ -148,9 +159,9 @@ const Home: React.FC = () => {
     locateWithAmap(AMap, map)
   }, [locateWithAmap])
 
-  // 位置变化时上报给服务器
+  // 位置变化时上报给服务器（跳过默认位置，避免上报未定位时的坐标）
   useEffect(() => {
-    if (isOnline && driverLocation.lat !== 39.90923) {
+    if (isOnline && driverLocation.lat !== DEFAULT_YIWU.lat) {
       emitLocation(driverLocation.lat, driverLocation.lng)
     }
   }, [driverLocation, isOnline, emitLocation])

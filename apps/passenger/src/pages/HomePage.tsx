@@ -39,6 +39,8 @@ export default function HomePage({ api }: HomePageProps) {
   const [price, setPrice] = useState(0)
   const [distance, setDistance] = useState(0)
   const [duration, setDuration] = useState(0)
+  // 义乌市中心坐标作为默认位置
+  const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306, address: '义乌市' }
   const [currentLocation, setCurrentLocation] = useState<Position | null>(null)
   const [mapReady, setMapReady] = useState(false)
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
@@ -172,10 +174,13 @@ export default function HomePage({ api }: HomePageProps) {
 
     currentAMap.plugin(['AMap.Geolocation'], () => {
       const geolocation = new currentAMap.Geolocation({
-        enableHighAccuracy: true,
+        enableHighAccuracy: false,     // Electron中不需要GPS
         timeout: 10000,
         zoomToAccuracy: false,
-        GeoLocationFirst: false, // Electron中优先IP定位
+        GeoLocationFirst: false,       // 不优先HTML5定位
+        noGeoLocation: 2,              // 禁用PC端浏览器定位（Electron中会超时）
+        noIpLocate: 0,                 // 启用高精度IP定位
+        extensions: 'all',             // 返回完整信息（含格式化地址）
       })
 
       geolocation.getCurrentPosition((status: string, result: any) => {
@@ -184,12 +189,18 @@ export default function HomePage({ api }: HomePageProps) {
           const pos: Position = {
             lng: result.position.getLng(),
             lat: result.position.getLat(),
+            address: result.formattedAddress || '',
           }
           setCurrentLocation(pos)
           currentMap.setCenter([pos.lng, pos.lat])
-          reverseGeocode(pos, currentAMap)
+          if (result.formattedAddress) {
+            // 已有地址，无需额外逆地理编码
+          } else {
+            reverseGeocode(pos, currentAMap)
+          }
+          console.log('定位成功:', pos.address, `(${pos.lng.toFixed(4)}, ${pos.lat.toFixed(4)})`, 'type:', result.location_type)
         } else {
-          console.warn('高德定位失败，使用IP精确定位API:', status)
+          console.warn('高德定位失败，使用CitySearch作为后备:', status)
           locateWithIPApi(currentMap)
         }
       })
@@ -221,8 +232,8 @@ export default function HomePage({ api }: HomePageProps) {
             console.log('IP定位结果:', result.city)
           }
         } else {
-          console.warn('CitySearch定位失败，使用默认位置')
-          setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
+          console.warn('CitySearch定位失败，使用义乌默认位置')
+          setCurrentLocation(DEFAULT_YIWU)
         }
       })
     })
@@ -327,7 +338,7 @@ export default function HomePage({ api }: HomePageProps) {
         <MapView
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
-          center={pickup || currentLocation || { lng: 116.397428, lat: 39.90923 }}
+          center={pickup || currentLocation || DEFAULT_YIWU}
           zoom={14}
           onMapReady={handleMapReady}
         >
