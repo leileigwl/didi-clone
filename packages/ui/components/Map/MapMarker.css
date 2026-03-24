@@ -116,44 +116,13 @@
   }
 }
 
-/* 我的位置标记 - 圆点+脉冲 */
+/* 我的位置标记 - 简单圆点 */
 .map-marker-myLocation {
-  animation: mylocation-pulse 2s ease-in-out infinite;
+  /* 无动画 */
 }
 
 .map-marker-myLocation::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 36px;
-  height: 36px;
-  margin-top: -18px;
-  margin-left: -18px;
-  border-radius: 50%;
-  background: rgba(24, 144, 255, 0.2);
-  animation: mylocation-ring 2s ease-out infinite;
-  pointer-events: none;
-}
-
-@keyframes mylocation-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(24, 144, 255, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 0 12px rgba(24, 144, 255, 0.8));
-  }
-}
-
-@keyframes mylocation-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+  /* 无伪元素 */
 }
 
 /* 暗黑主题 */
