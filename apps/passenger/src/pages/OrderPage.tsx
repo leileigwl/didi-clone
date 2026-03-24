@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { APIClient, OrderStatus, Driver } from '@didi/api-client'
+import { APIClient, OrderStatus, Driver, type Order } from '@didi/api-client'
+import { MapView, MapMarker, MapRoute, type Position } from '@didi/ui'
+import './OrderPage.css'
 
 interface OrderPageProps {
   api: APIClient
 }
+
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '7bf10417175742fc23ec515c46599e8d'
+const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6b5a0df9c012c82a33684e15'
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: '等待接单',
@@ -30,86 +35,99 @@ export default function OrderPage({ api }: OrderPageProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<Order | null>(null)
   const [driver, setDriver] = useState<Driver | null>(null)
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const unsubRef = useRef<(() => void)[]>([])
 
+  // 获取订单详情
   useEffect(() => {
-    // 模拟订单数据
-    const mockOrder = {
-      id: id || 'ORD-000001',
-      userId: 'user-1',
-      driverId: 'driver-1',
-      status: 'driver_arriving' as OrderStatus,
-      pickup: {
-        address: '中关村软件园',
-        lat: 39.9841,
-        lng: 116.3074
-      },
-      destination: {
-        address: '国贸CBD',
-        lat: 39.9087,
-        lng: 116.4602
-      },
-      price: 45,
-      distance: 15,
-      duration: 25,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    const mockDriver: Driver = {
-      id: 'driver-1',
-      name: '张师傅',
-      phone: '138****1234',
-      carModel: '比亚迪秦',
-      carPlate: '京A12345',
-      rating: 4.9,
-      location: {
-        address: '北京市海淀区',
-        lat: 39.98,
-        lng: 116.31
-      },
-      distance: 2
-    }
-
-    setTimeout(() => {
-      setOrder(mockOrder)
-      setDriver(mockDriver)
+    if (!id) return
+    api.getOrder(id).then(res => {
+      if (res.code === 0 && res.data) {
+        setOrder(res.data)
+        if (res.data.driver) setDriver(res.data.driver)
+        setLoading(false)
+      } else {
+        setError(res.message || '订单不存在')
+        setLoading(false)
+      }
+    }).catch(() => {
+      setError('网络错误')
       setLoading(false)
-    }, 500)
-  }, [id])
+    })
+  }, [id, api])
+
+  // 连接 Socket 实时更新
+  useEffect(() => {
+    if (!id) return
+    api.connectSocket(id)
+    api.joinOrderRoom(id)
+
+    const unsubStatus = api.onOrderStatus((data: any) => {
+      if (data.orderId !== id) return
+      setOrder(prev => prev ? { ...prev, status: data.status, driverId: data.driverId || prev.driverId } : prev)
+      if (data.driver) {
+        setDriver(data.driver)
+      }
+    })
+
+    const unsubLocation = api.onDriverLocation((data: any) => {
+      if (data.orderId !== id) return
+      setDriverLocation(data.location)
+    })
+
+    unsubRef.current = [unsubStatus, unsubLocation]
+
+    return () => {
+      unsubRef.current.forEach(fn => fn())
+      api.leaveOrderRoom(id || '')
+      api.disconnectSocket()
+    }
+  }, [id, api])
 
   const handleCancel = async () => {
-    if (order && confirm('确定要取消订单吗？')) {
-      try {
-        await api.cancelOrder(order.id)
-        navigate('/')
-      } catch (e) {
-        console.error('取消订单失败', e)
-      }
+    if (!order || !confirm('确定要取消订单吗？')) return
+    try {
+      await api.cancelOrder(order.id)
+      setOrder({ ...order, status: 'cancelled' })
+    } catch (e) {
+      console.error('取消订单失败', e)
     }
   }
 
+  // 地图中心：有司机位置用司机位置，否则用上车点
+  const mapCenter = driverLocation
+    ? { lng: driverLocation.lng, lat: driverLocation.lat, address: '' }
+    : order?.pickup
+      ? { lng: order.pickup.lng, lat: order.pickup.lat, address: order.pickup.address }
+      : { lng: 120.075, lat: 29.306, address: '' }
+
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+      <div className="order-loading">
         <div className="spin" style={{ fontSize: 32 }}>⏳</div>
       </div>
     )
   }
 
-  if (!order) {
+  if (error || !order) {
     return (
       <div style={{ textAlign: 'center', padding: 40 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-        <div>订单不存在</div>
+        <div>{error || '订单不存在'}</div>
         <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/')}>
           返回首页
         </button>
       </div>
     )
   }
+
+  // 计算进度条步骤
+  const statusSteps: OrderStatus[] = ['pending', 'accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed']
+  const currentStepIdx = statusSteps.indexOf(order.status)
 
   return (
     <div className="order-page">
@@ -119,56 +137,70 @@ export default function OrderPage({ api }: OrderPageProps) {
           <div className={`order-status ${order.status}`}>
             {statusIcons[order.status]} {statusLabels[order.status]}
           </div>
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-            订单号: {order.id}
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            {order.id.slice(0, 8)}
           </div>
         </div>
 
         {/* 进度条 */}
-        <div style={{
-          display: 'flex',
-          gap: 8,
-          marginBottom: 16
-        }}>
-          {['pending', 'accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed'].map((s, i) => (
+        <div className="order-progress">
+          {statusSteps.map((s, i) => (
             <div
               key={s}
-              style={{
-                flex: 1,
-                height: 4,
-                borderRadius: 2,
-                background: ['pending', 'accepted', 'driver_arriving'].includes(order.status) && i <= 2
-                  ? 'var(--primary)'
-                  : ['in_progress', 'completed'].includes(order.status) && i <= 4
-                    ? 'var(--primary)'
-                    : 'var(--border)'
-              }}
+              className={`order-progress-step ${i <= currentStepIdx ? 'active' : ''}`}
             />
           ))}
         </div>
-
-        {/* 预计到达时间 */}
-        {order.status === 'driver_arriving' && (
-          <div style={{ textAlign: 'center', padding: '12px 0' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>预计到达</div>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--primary)' }}>
-              3 分钟
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 地图 */}
-      <div className="map-container" style={{ height: 150 }}>
-        <div className="map-placeholder">
-          司机正在赶来...
-        </div>
+      <div className="order-map">
+        <MapView
+          amapKey={AMAP_KEY}
+          securityJsCode={AMAP_SECURITY_CODE}
+          center={mapCenter}
+          zoom={14}
+        >
+          {/* 上车点 */}
+          <MapMarker position={order.pickup} type="origin" label="上车点" />
+
+          {/* 目的地 */}
+          <MapMarker position={order.destination} type="destination" label="目的地" />
+
+          {/* 司机位置 */}
+          {driverLocation && !['completed', 'cancelled'].includes(order.status) && (
+            <MapMarker
+              position={{ lng: driverLocation.lng, lat: driverLocation.lat, address: '' }}
+              type="driver"
+              label="司机"
+            />
+          )}
+
+          {/* 路线：司机到上车点 / 上车点到目的地 */}
+          {!['completed', 'cancelled', 'pending'].includes(order.status) && driverLocation && (
+            <MapRoute
+              origin={{ lng: driverLocation.lng, lat: driverLocation.lat, address: '' }}
+              destination={order.pickup}
+              color="#1890ff"
+            />
+          )}
+
+          {['in_progress'].includes(order.status) && (
+            <MapRoute
+              origin={order.pickup}
+              destination={order.destination}
+              color="#52c41a"
+            />
+          )}
+        </MapView>
       </div>
 
       {/* 司机信息 */}
-      {driver && (
+      {driver && !['pending', 'cancelled'].includes(order.status) && (
         <div className="driver-card">
-          <div className="driver-avatar">👤</div>
+          <div className="driver-avatar">
+            <img src={driver.avatar} alt="" />
+          </div>
           <div className="driver-info">
             <div className="driver-name">{driver.name}</div>
             <div className="driver-car">{driver.carModel} · {driver.carPlate}</div>
@@ -188,6 +220,7 @@ export default function OrderPage({ api }: OrderPageProps) {
             <div className="location-address">{order.pickup.address}</div>
           </div>
         </div>
+        <div className="location-divider" />
         <div className="location-item">
           <div className="location-icon destination">🎯</div>
           <div className="location-info">
@@ -226,6 +259,15 @@ export default function OrderPage({ api }: OrderPageProps) {
           onClick={() => navigate('/')}
         >
           再来一单
+        </button>
+      )}
+
+      {order.status === 'cancelled' && (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={() => navigate('/')}
+        >
+          返回首页
         </button>
       )}
     </div>

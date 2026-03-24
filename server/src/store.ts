@@ -11,58 +11,58 @@ export const authSessions: Map<string, AuthSession> = new Map()
 const mockDrivers: Driver[] = [
   {
     id: 'driver-1',
-    name: 'Zhang Wei',
+    name: '张师傅',
     phone: '13800138001',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver1',
-    carModel: 'Toyota Camry',
-    carPlate: 'Jing A12345',
+    carModel: '比亚迪秦',
+    carPlate: '浙G·A12345',
     rating: 4.9,
-    location: { lat: 39.9042, lng: 116.4074 },
+    location: { lat: 29.308, lng: 120.072 },
     status: 'idle'
   },
   {
     id: 'driver-2',
-    name: 'Li Ming',
+    name: '李师傅',
     phone: '13800138002',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver2',
-    carModel: 'Honda Accord',
-    carPlate: 'Jing B67890',
+    carModel: '丰田卡罗拉',
+    carPlate: '浙G·B67890',
     rating: 4.8,
-    location: { lat: 39.9142, lng: 116.4174 },
+    location: { lat: 29.312, lng: 120.085 },
     status: 'idle'
   },
   {
     id: 'driver-3',
-    name: 'Wang Qiang',
+    name: '王师傅',
     phone: '13800138003',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver3',
-    carModel: 'Audi A4',
-    carPlate: 'Jing C11111',
+    carModel: '本田雅阁',
+    carPlate: '浙G·C11111',
     rating: 4.7,
-    location: { lat: 39.9242, lng: 116.3974 },
+    location: { lat: 29.305, lng: 120.065 },
     status: 'idle'
   },
   {
     id: 'driver-4',
-    name: 'Liu Yang',
+    name: '刘师傅',
     phone: '13800138004',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver4',
-    carModel: 'BMW 3 Series',
-    carPlate: 'Jing D22222',
+    carModel: '大众帕萨特',
+    carPlate: '浙G·D22222',
     rating: 4.95,
-    location: { lat: 39.8942, lng: 116.4274 },
-    status: 'busy'
+    location: { lat: 29.320, lng: 120.095 },
+    status: 'idle'
   },
   {
     id: 'driver-5',
-    name: 'Chen Jie',
+    name: '陈师傅',
     phone: '13800138005',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver5',
-    carModel: 'Mercedes C-Class',
-    carPlate: 'Jing E33333',
+    carModel: '奔驰C级',
+    carPlate: '浙G·E33333',
     rating: 4.85,
-    location: { lat: 39.8842, lng: 116.3874 },
-    status: 'offline'
+    location: { lat: 29.298, lng: 120.058 },
+    status: 'idle'
   }
 ]
 

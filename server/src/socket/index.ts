@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io'
-import { orders, drivers, updateDriverLocation, updateDriverStatus, getNearbyDrivers, calculateDistance } from '../store'
+import { orders, drivers, updateDriverLocation, updateDriverStatus, getNearbyDrivers, calculateDistance, updateOrderStatus } from '../store'
 
 // Track online drivers by socket id
 const driverSockets = new Map<string, { driverId: string; lat: number; lng: number }>()
@@ -212,4 +212,109 @@ export function broadcastOrderUpdate(
     ...data,
     timestamp: new Date().toISOString()
   })
+}
+
+// Auto-accept order simulation
+export function simulateOrderFlow(io: Server, orderId: string) {
+  const order = orders.get(orderId)
+  if (!order || order.status !== 'pending') return
+
+  // Find nearest idle driver
+  let nearestDriverId: string | null = null
+  let nearestDist = Infinity
+  for (const [id, driver] of drivers.entries()) {
+    if (driver.status !== 'idle') continue
+    const dist = calculateDistance(order.pickup.lat, order.pickup.lng, driver.location.lat, driver.location.lng)
+    if (dist < nearestDist) {
+      nearestDist = dist
+      nearestDriverId = id
+    }
+  }
+
+  if (!nearestDriverId) {
+    console.log(`No idle driver available for order ${orderId}`)
+    return
+  }
+
+  const driverId = nearestDriverId
+  const driver = drivers.get(driverId)!
+
+  // 3秒后自动接单
+  setTimeout(() => {
+    const o = orders.get(orderId)
+    if (!o || o.status !== 'pending') return
+
+    o.driverId = driverId
+    o.status = 'accepted'
+    o.updatedAt = new Date()
+    orders.set(orderId, o)
+    updateDriverStatus(driverId, 'busy')
+
+    io.to(`order:${orderId}`).emit('order:status', {
+      orderId: o.id,
+      status: 'accepted',
+      driverId,
+      driver: {
+        id: driver.id,
+        name: driver.name,
+        phone: driver.phone,
+        avatar: driver.avatar,
+        carModel: driver.carModel,
+        carPlate: driver.carPlate,
+        rating: driver.rating
+      },
+      timestamp: new Date().toISOString()
+    })
+    console.log(`[Auto] Driver ${driverId} accepted order ${orderId}`)
+
+    // 5秒后变为 driver_arriving
+    setTimeout(() => {
+      const o2 = orders.get(orderId)
+      if (!o2 || o2.status !== 'accepted') return
+
+      updateOrderStatus(orderId, 'driver_arriving')
+
+      // Simulate driver moving toward pickup
+      const driverData = drivers.get(driverId)
+      if (driverData) {
+        io.to(`order:${orderId}`).emit('driver:location', {
+          orderId,
+          location: { lat: driverData.location.lat, lng: driverData.location.lng },
+          timestamp: new Date().toISOString()
+        })
+      }
+
+      io.to(`order:${orderId}`).emit('order:status', {
+        orderId,
+        status: 'driver_arriving',
+        timestamp: new Date().toISOString()
+      })
+      console.log(`[Auto] Driver ${driverId} arriving for order ${orderId}`)
+
+      // 8秒后变为 arrived
+      setTimeout(() => {
+        const o3 = orders.get(orderId)
+        if (!o3 || o3.status !== 'driver_arriving') return
+
+        updateOrderStatus(orderId, 'arrived')
+
+        // Update driver location to pickup
+        if (driverData) {
+          updateDriverLocation(driverId, o3.pickup.lat, o3.pickup.lng)
+          io.to(`order:${orderId}`).emit('driver:location', {
+            orderId,
+            location: { lat: o3.pickup.lat, lng: o3.pickup.lng },
+            timestamp: new Date().toISOString()
+          })
+        }
+
+        io.to(`order:${orderId}`).emit('order:status', {
+          orderId,
+          status: 'arrived',
+          timestamp: new Date().toISOString()
+        })
+        console.log(`[Auto] Driver ${driverId} arrived at order ${orderId}`)
+      }, 8000)
+    }, 5000)
+  }, 3000)
 }

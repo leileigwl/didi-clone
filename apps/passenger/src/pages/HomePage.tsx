@@ -18,6 +18,7 @@ interface SearchResult {
   address: string
   lng: number
   lat: number
+  distance?: string
 }
 
 export default function HomePage({ api }: HomePageProps) {
@@ -159,6 +160,34 @@ export default function HomePage({ api }: HomePageProps) {
             lng: tip.location.getLng(),
             lat: tip.location.getLat(),
           }))
+
+        // 计算每个搜索结果到参考点的驾车距离
+        const refPoint = type === 'destination'
+          ? (pickup || currentLocation)
+          : currentLocation
+        if (refPoint && mapRef.current?.AMap) {
+          const AMap = mapRef.current.AMap
+          AMap.plugin(['AMap.Driving'], () => {
+            const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
+            results.forEach((item, idx) => {
+              driving.search(
+                [refPoint.lng, refPoint.lat],
+                [item.lng, item.lat],
+                (s: string, r: any) => {
+                  if (s === 'complete' && r.routes?.length > 0) {
+                    const d = r.routes[0].distance
+                    const distStr = d >= 1000 ? `${(d / 1000).toFixed(1)}km` : `${Math.round(d)}m`
+                    const updated = [...results]
+                    updated[idx] = { ...updated[idx], distance: distStr }
+                    if (type === 'pickup') setPickupResults(updated)
+                    else setDestResults(updated)
+                  }
+                }
+              )
+            })
+          })
+        }
+
         if (type === 'pickup') setPickupResults(results)
         else setDestResults(results)
       } else {
@@ -166,7 +195,7 @@ export default function HomePage({ api }: HomePageProps) {
         else setDestResults([])
       }
     })
-  }, [])
+  }, [pickup, currentLocation])
 
   // 搜索输入变化
   const handlePickupInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -488,7 +517,7 @@ export default function HomePage({ api }: HomePageProps) {
                 onClick={(e) => { e.stopPropagation(); handlePickupSelect(result) }}
               >
                 <div className="search-result-name">{result.name}</div>
-                <div className="search-result-address">{result.address}</div>
+                <div className="search-result-address">{result.address}{result.distance && ` · ${result.distance}`}</div>
               </div>
             ))}
           </div>
@@ -532,7 +561,7 @@ export default function HomePage({ api }: HomePageProps) {
                 onClick={(e) => { e.stopPropagation(); handleDestSelect(result) }}
               >
                 <div className="search-result-name">{result.name}</div>
-                <div className="search-result-address">{result.address}</div>
+                <div className="search-result-address">{result.address}{result.distance && ` · ${result.distance}`}</div>
               </div>
             ))}
           </div>

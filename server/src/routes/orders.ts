@@ -10,7 +10,7 @@ import {
   drivers
 } from '../store'
 import { authMiddleware } from '../middleware/auth'
-import { broadcastToNearbyDrivers } from '../socket'
+import { broadcastToNearbyDrivers, simulateOrderFlow } from '../socket'
 import type { Server } from 'socket.io'
 
 let io: Server | null = null
@@ -61,6 +61,9 @@ router.post('/', (req, res) => {
       distance: order.distance,
       duration: order.duration,
     })
+
+    // Auto-accept simulation for demo
+    simulateOrderFlow(io, order.id)
   }
 
   res.status(201).json(success(order, 'Order created successfully'))
