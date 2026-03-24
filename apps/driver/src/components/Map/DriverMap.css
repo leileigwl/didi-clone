@@ -1,0 +1,122 @@
+.driver-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* 订单信息卡片 */
+.driver-map-order-card {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  background-color: var(--white);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+}
+
+.driver-map-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.driver-map-order-status {
+  padding: 4px 12px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.driver-map-order-passenger {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* 路线信息 */
+.driver-map-order-route {
+  margin-bottom: 16px;
+}
+
+.driver-map-route-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.driver-map-route-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.driver-map-route-item.origin .driver-map-route-dot {
+  background-color: var(--success-color);
+}
+
+.driver-map-route-item.destination .driver-map-route-dot {
+  background-color: var(--error-color);
+}
+
+.driver-map-route-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.driver-map-route-line {
+  width: 2px;
+  height: 20px;
+  background-color: var(--border-color);
+  margin-left: 5px;
+}
+
+/* 订单信息 */
+.driver-map-order-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text-secondary-color);
+}
+
+/* 操作按钮 */
+.driver-map-action-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.driver-map-action-btn:hover {
+  background-color: var(--primary-hover-color);
+}
+
+/* 暗黑主题 */
+@media (prefers-color-scheme: dark) {
+  .driver-map-order-card {
+    background-color: #2a2a2a;
+  }
+
+  .driver-map-order-info {
+    background-color: #1a1a1a;
+  }
+}

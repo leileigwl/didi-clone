@@ -1,0 +1,70 @@
+.map-view-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background-color: var(--map-bg, #f0f0f0);
+  overflow: hidden;
+}
+
+/* 加载状态 */
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--map-loading-bg, rgba(255, 255, 255, 0.9));
+  color: var(--map-loading-color, #666);
+  font-size: 14px;
+  z-index: 100;
+}
+
+.map-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--map-spinner-border, #e0e0e0);
+  border-top-color: var(--map-spinner-active, #1890ff);
+  border-radius: 50%;
+  animation: map-spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 错误状态 */
+.map-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--map-error-bg, rgba(255, 255, 255, 0.9));
+  color: var(--map-error-color, #ff4d4f);
+  font-size: 14px;
+  z-index: 100;
+}
+
+/* 暗黑主题变量 */
+@media (prefers-color-scheme: dark) {
+  .map-view-container {
+    --map-bg: #1a1a1a;
+    --map-loading-bg: rgba(26, 26, 26, 0.9);
+    --map-loading-color: #999;
+    --map-spinner-border: #333;
+    --map-spinner-active: #177ddc;
+    --map-error-bg: rgba(26, 26, 26, 0.9);
+    --map-error-color: #a61d24;
+  }
+}

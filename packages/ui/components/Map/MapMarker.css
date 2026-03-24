@@ -1,0 +1,74 @@
+.map-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.map-marker:hover {
+  transform: scale(1.1) rotate(var(--marker-angle, 0deg)) !important;
+}
+
+.map-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.map-marker-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--marker-label-bg, white);
+  color: var(--marker-label-color, #333);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 4px;
+}
+
+.map-marker-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--marker-label-bg, white);
+}
+
+/* 乘客标记 */
+.map-marker-passenger svg path:first-child {
+  fill: var(--marker-passenger-color, #1890ff);
+}
+
+/* 司机标记 */
+.map-marker-driver svg path:first-child {
+  fill: var(--marker-driver-color, #fa8c16);
+}
+
+/* 汽车标记动画 */
+.map-marker-car {
+  animation: car-pulse 2s ease-in-out infinite;
+}
+
+@keyframes car-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 2px 4px rgba(250, 140, 22, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 2px 8px rgba(250, 140, 22, 0.8));
+  }
+}
+
+/* 暗黑主题 */
+@media (prefers-color-scheme: dark) {
+  .map-marker-label {
+    --marker-label-bg: #2a2a2a;
+    --marker-label-color: #fff;
+  }
+}

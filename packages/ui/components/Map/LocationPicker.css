@@ -1,0 +1,216 @@
+.location-picker {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 搜索栏 */
+.location-search {
+  position: relative;
+  z-index: 200;
+  background-color: var(--picker-search-bg, white);
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.location-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--picker-input-bg, #f5f5f5);
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.location-search-icon {
+  width: 20px;
+  height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  margin-right: 8px;
+}
+
+.location-search-input {
+  flex: 1;
+  height: 40px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--picker-input-color, #333);
+  outline: none;
+}
+
+.location-search-input::placeholder {
+  color: var(--picker-input-placeholder, #999);
+}
+
+.location-search-clear {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background-color: var(--picker-clear-bg, #d9d9d9);
+  border-radius: 50%;
+  color: var(--picker-clear-color, white);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 搜索结果 */
+.location-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--picker-results-bg, white);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.location-search-result-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--picker-result-border, #f0f0f0);
+  transition: background-color 0.2s;
+}
+
+.location-search-result-item:last-child {
+  border-bottom: none;
+}
+
+.location-search-result-item:hover {
+  background-color: var(--picker-result-hover, #f5f5f5);
+}
+
+.location-search-result-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--picker-result-name-color, #333);
+  margin-bottom: 4px;
+}
+
+.location-search-result-address {
+  font-size: 12px;
+  color: var(--picker-result-address-color, #999);
+}
+
+/* 地图容器 */
+.location-picker-map {
+  flex: 1;
+  position: relative;
+  min-height: 300px;
+}
+
+/* 定位按钮 */
+.location-locate-button {
+  position: absolute;
+  right: 16px;
+  bottom: 100px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--picker-locate-bg, white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 150;
+  transition: all 0.2s;
+}
+
+.location-locate-button:hover {
+  background-color: var(--picker-locate-hover, #f5f5f5);
+}
+
+.location-locate-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.location-locate-icon {
+  width: 24px;
+  height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231890ff'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.location-locate-loading {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--picker-loading-border, #e0e0e0);
+  border-top-color: var(--picker-loading-active, #1890ff);
+  border-radius: 50%;
+  animation: locate-spin 1s linear infinite;
+}
+
+@keyframes locate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 地址显示 */
+.location-address {
+  padding: 12px 16px;
+  background-color: var(--picker-address-bg, white);
+  border-top: 1px solid var(--picker-address-border, #f0f0f0);
+}
+
+.location-address-label {
+  font-size: 12px;
+  color: var(--picker-address-label-color, #999);
+  margin-right: 8px;
+}
+
+.location-address-value {
+  font-size: 14px;
+  color: var(--picker-address-value-color, #333);
+}
+
+/* 暗黑主题 */
+@media (prefers-color-scheme: dark) {
+  .location-search {
+    --picker-search-bg: #1a1a1a;
+    --picker-input-bg: #2a2a2a;
+    --picker-input-color: #fff;
+    --picker-input-placeholder: #666;
+    --picker-clear-bg: #444;
+    --picker-clear-color: #ccc;
+  }
+
+  .location-search-results {
+    --picker-results-bg: #1a1a1a;
+    --picker-result-border: #333;
+    --picker-result-hover: #2a2a2a;
+    --picker-result-name-color: #fff;
+    --picker-result-address-color: #888;
+  }
+
+  .location-locate-button {
+    --picker-locate-bg: #2a2a2a;
+    --picker-locate-hover: #333;
+    --picker-loading-border: #444;
+    --picker-loading-active: #177ddc;
+  }
+
+  .location-locate-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23177ddc'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E");
+  }
+
+  .location-address {
+    --picker-address-bg: #1a1a1a;
+    --picker-address-border: #333;
+    --picker-address-label-color: #888;
+    --picker-address-value-color: #fff;
+  }
+}

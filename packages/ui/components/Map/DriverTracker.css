@@ -1,0 +1,120 @@
+.driver-tracker {
+  position: relative;
+}
+
+/* 进度条 */
+.driver-tracker-progress {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--tracker-progress-bg, rgba(255, 255, 255, 0.95));
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 150;
+}
+
+.driver-tracker-progress-bar {
+  flex: 1;
+  height: 6px;
+  background-color: var(--tracker-progress-bar-bg, #e0e0e0);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.driver-tracker-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tracker-progress-start, #1890ff), var(--tracker-progress-end, #52c41a));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.driver-tracker-progress-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tracker-progress-color, #333);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* 控制按钮 */
+.driver-tracker-controls {
+  position: absolute;
+  bottom: 80px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 150;
+}
+
+.driver-tracker-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.driver-tracker-btn.start {
+  background-color: var(--tracker-btn-start-bg, #52c41a);
+  color: var(--tracker-btn-start-color, white);
+}
+
+.driver-tracker-btn.start:hover {
+  background-color: var(--tracker-btn-start-hover, #73d13d);
+}
+
+.driver-tracker-btn.stop {
+  background-color: var(--tracker-btn-stop-bg, #ff4d4f);
+  color: var(--tracker-btn-stop-color, white);
+}
+
+.driver-tracker-btn.stop:hover {
+  background-color: var(--tracker-btn-stop-hover, #ff7875);
+}
+
+.driver-tracker-btn.reset {
+  background-color: var(--tracker-btn-reset-bg, #1890ff);
+  color: var(--tracker-btn-reset-color, white);
+}
+
+.driver-tracker-btn.reset:hover {
+  background-color: var(--tracker-btn-reset-hover, #40a9ff);
+}
+
+/* 暗黑主题 */
+@media (prefers-color-scheme: dark) {
+  .driver-tracker-progress {
+    --tracker-progress-bg: rgba(42, 42, 42, 0.95);
+    --tracker-progress-bar-bg: #444;
+    --tracker-progress-start: #177ddc;
+    --tracker-progress-end: #49aa19;
+    --tracker-progress-color: #fff;
+  }
+
+  .driver-tracker-btn.start {
+    --tracker-btn-start-bg: #49aa19;
+    --tracker-btn-start-color: white;
+    --tracker-btn-start-hover: #5cb85c;
+  }
+
+  .driver-tracker-btn.stop {
+    --tracker-btn-stop-bg: #a61d24;
+    --tracker-btn-stop-color: white;
+    --tracker-btn-stop-hover: #d32029;
+  }
+
+  .driver-tracker-btn.reset {
+    --tracker-btn-reset-bg: #177ddc;
+    --tracker-btn-reset-color: white;
+    --tracker-btn-reset-hover: #3c9ae8;
+  }
+}
