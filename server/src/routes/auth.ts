@@ -26,8 +26,10 @@ router.post('/send-code', (req, res) => {
 
   const { phone } = result.data
 
-  // Generate 6-digit code
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // Generate 6-digit code (use fixed code "123456" for development)
+  const code = process.env.NODE_ENV === 'production'
+    ? Math.floor(100000 + Math.random() * 900000).toString()
+    : '123456'
 
   // Store session (expires in 5 minutes)
   authSessions.set(phone, {
@@ -50,7 +52,7 @@ router.post('/verify', (req, res) => {
     return
   }
 
-  const { phone, code } = result.data
+  const { phone, code } = result.data!
 
   // Check session
   const session = authSessions.get(phone)

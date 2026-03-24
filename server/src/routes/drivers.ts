@@ -17,9 +17,9 @@ const router = Router()
 
 // Validation schemas
 const nearbySchema = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  radius: z.number().min(0.1).max(50).optional()
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
+  radius: z.coerce.number().min(0.1).max(50).optional()
 })
 
 const locationUpdateSchema = z.object({
@@ -44,7 +44,7 @@ router.get('/nearby', (req, res) => {
     return
   }
 
-  const { lat, lng, radius = 5 } = result.data
+  const { lat, lng, radius = 5 } = result.data!
   const nearby = getNearbyDrivers(lat, lng, radius)
 
   res.json(success(nearby.map(d => ({
