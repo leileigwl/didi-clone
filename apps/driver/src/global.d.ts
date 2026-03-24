@@ -11,6 +11,7 @@ declare global {
       maximize: () => Promise<boolean>
       requestLocationPermission: () => Promise<{ granted: boolean; status: string }>
       openLocationSettings: () => Promise<boolean>
+      getNativeLocation: () => Promise<{ lat: number; lng: number; accuracy: number } | { error: string }>
       onNewOrder: (callback: (order: any) => void) => () => void
       onOrderCancelled: (callback: (orderId: string) => void) => () => void
       onTrayClick: (callback: () => void) => () => void

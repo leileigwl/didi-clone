@@ -20,6 +20,7 @@ const electronAPI = {
   // Location permission
   requestLocationPermission: () => ipcRenderer.invoke('driver:request-location-permission'),
   openLocationSettings: () => ipcRenderer.invoke('driver:open-location-settings'),
+  getNativeLocation: () => ipcRenderer.invoke('driver:get-native-location'),
 
   // Event listeners
   onNewOrder: (callback) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
 import { useSocket } from '../../hooks/useSocket'
@@ -32,6 +32,7 @@ const Home: React.FC = () => {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
   const [currentAddress, setCurrentAddress] = useState('定位中...')
+  const mapRef = useRef<{ map: any; AMap: any } | null>(null)
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline
@@ -60,11 +61,29 @@ const Home: React.FC = () => {
     }
   }
 
-  // 打开系统定位设置
+  // 打开系统定位设置，然后重试定位
   const handleOpenLocationSettings = async () => {
     if (window.electronAPI?.openLocationSettings) {
       await window.electronAPI.openLocationSettings()
     }
+    // 等待用户开启权限后重试
+    setTimeout(() => {
+      if (mapRef.current) {
+        const { map, AMap } = mapRef.current
+        if (window.electronAPI?.getNativeLocation) {
+          window.electronAPI.getNativeLocation().then((result: any) => {
+            if ('lat' in result) {
+              const { lat, lng } = result
+              setDriverLocation({ lng, lat })
+              setLocationDenied(false)
+              map.setCenter([lng, lat])
+              map.setZoom(16)
+              reverseGeocode(lng, lat, AMap)
+            }
+          })
+        }
+      }
+    }, 3000)
   }
 
   // 路线规划完成
@@ -170,8 +189,62 @@ const Home: React.FC = () => {
 
   // 地图加载完成后定位
   const handleMapReady = useCallback((map: any, AMap: any) => {
-    locateWithAmap(AMap, map)
-  }, [locateWithAmap])
+    mapRef.current = { map, AMap }
+    // 策略1: 使用 macOS CoreLocation 获取真实精确位置
+    const tryCoreLocation = async (): Promise<boolean> => {
+      if (!window.electronAPI?.getNativeLocation) return false
+      try {
+        const result = await window.electronAPI.getNativeLocation()
+        if ('lat' in result && 'lng' in result) {
+          const { lat, lng, accuracy } = result
+          console.log('CoreLocation定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
+          setDriverLocation({ lng, lat })
+          setLocationDenied(false)
+          map.setCenter([lng, lat])
+          map.setZoom(16)
+          reverseGeocode(lng, lat, AMap)
+          return true
+        } else if (result.error === 'denied') {
+          console.warn('CoreLocation权限被拒绝，需要在系统设置中开启')
+          setLocationDenied(true)
+        } else {
+          console.warn('CoreLocation不可用:', result.error)
+        }
+      } catch (e) {
+        console.warn('CoreLocation调用失败:', e)
+      }
+      return false
+    }
+
+    // 策略2: 使用 HTML5 navigator.geolocation（localhost 是安全上下文）
+    const tryHTML5Geo = (): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) { resolve(false); return }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude: lat, longitude: lng, accuracy } = pos.coords
+            console.log('HTML5定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
+            setDriverLocation({ lng, lat })
+            setLocationDenied(false)
+            map.setCenter([lng, lat])
+            map.setZoom(16)
+            reverseGeocode(lng, lat, AMap)
+            resolve(true)
+          },
+          (err) => {
+            console.warn('HTML5定位失败:', err.message, `(code: ${err.code})`)
+            resolve(false)
+          },
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        )
+      })
+    }
+
+    // 依次尝试：CoreLocation → HTML5 → AMap CitySearch
+    tryCoreLocation()
+      .then((ok) => { if (!ok) return tryHTML5Geo() })
+      .then((ok) => { if (!ok) locateWithAmap(AMap, map) })
+  }, [locateWithAmap, reverseGeocode])
 
   // 位置变化时上报给服务器（跳过默认位置，避免上报未定位时的坐标）
   useEffect(() => {

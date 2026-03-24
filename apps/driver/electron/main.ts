@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } = require('electron')
 const { join } = require('path')
+const { execFile } = require('child_process')
 
 let mainWindow = null
 let tray = null
@@ -254,6 +255,32 @@ app.whenReady().then(() => {
       await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
     }
     return true
+  })
+
+  // 通过 macOS CoreLocation 获取真实位置
+  ipcMain.handle('driver:get-native-location', () => {
+    return new Promise((resolve) => {
+      if (process.platform !== 'darwin') {
+        resolve({ error: 'not_macos' })
+        return
+      }
+      const binPath = join(__dirname, '../bin/get-location')
+      execFile(binPath, { timeout: 15000 }, (error, stdout, stderr) => {
+        if (error) {
+          if (stdout) {
+            try { resolve(JSON.parse(stdout.trim())) } catch { resolve({ error: 'parse_error' }) }
+          } else {
+            resolve({ error: error.message })
+          }
+          return
+        }
+        try {
+          resolve(JSON.parse(stdout.trim()))
+        } catch {
+          resolve({ error: 'parse_error' })
+        }
+      })
+    })
   })
 
   app.on('activate', () => {
