@@ -9,9 +9,9 @@ interface HomePageProps {
   api: APIClient
 }
 
-// 高德地图 Key - 请在 .env 文件中配置
-const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
-const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || ''
+// 高德地图 Key - 直接配置测试
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '7bf10417175742fc23ec515c46599e8d'
+const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6b5a0df9c012c82a33684e15'
 
 // Debug: 输出 key 状态（不输出完整 key）
 console.log('Amap Key loaded:', AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED')
