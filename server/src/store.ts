@@ -7,12 +7,21 @@ export const drivers: Map<string, Driver> = new Map()
 export const orders: Map<string, Order> = new Map()
 export const authSessions: Map<string, AuthSession> = new Map()
 
-// Mock drivers data
-const mockDrivers: Driver[] = [
+// 司机认证会话
+export interface DriverAuthSession {
+  phone: string
+  code?: string
+  expiresAt: Date
+}
+export const driverAuthSessions: Map<string, DriverAuthSession> = new Map()
+
+// Mock drivers data (密码字段仅用于测试)
+const mockDrivers: (Driver & { password: string })[] = [
   {
     id: 'driver-1',
     name: '张师傅',
     phone: '13800138001',
+    password: '123456',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver1',
     carModel: '比亚迪秦',
     carPlate: '浙G·A12345',
@@ -24,6 +33,7 @@ const mockDrivers: Driver[] = [
     id: 'driver-2',
     name: '李师傅',
     phone: '13800138002',
+    password: '123456',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver2',
     carModel: '丰田卡罗拉',
     carPlate: '浙G·B67890',
@@ -35,6 +45,7 @@ const mockDrivers: Driver[] = [
     id: 'driver-3',
     name: '王师傅',
     phone: '13800138003',
+    password: '123456',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver3',
     carModel: '本田雅阁',
     carPlate: '浙G·C11111',
@@ -46,6 +57,7 @@ const mockDrivers: Driver[] = [
     id: 'driver-4',
     name: '刘师傅',
     phone: '13800138004',
+    password: '123456',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver4',
     carModel: '大众帕萨特',
     carPlate: '浙G·D22222',
@@ -57,6 +69,7 @@ const mockDrivers: Driver[] = [
     id: 'driver-5',
     name: '陈师傅',
     phone: '13800138005',
+    password: '123456',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=driver5',
     carModel: '奔驰C级',
     carPlate: '浙G·E33333',
@@ -69,7 +82,8 @@ const mockDrivers: Driver[] = [
 // Initialize mock data
 export function initMockData() {
   mockDrivers.forEach(driver => {
-    drivers.set(driver.id, driver)
+    const { password, ...driverData } = driver
+    drivers.set(driver.id, driverData)
   })
   console.log('Mock data initialized')
 }
@@ -91,6 +105,29 @@ export function findUserByPhone(phone: string): User | undefined {
     if (user.phone === phone) return user
   }
   return undefined
+}
+
+// 司机认证相关
+export function findDriverByPhone(phone: string): { driver: Driver; password: string } | undefined {
+  const driverWithPassword = mockDrivers.find(d => d.phone === phone)
+  if (driverWithPassword) {
+    const { password, ...driverData } = driverWithPassword
+    return { driver: driverData, password }
+  }
+  return undefined
+}
+
+export function validateDriverCredentials(phone: string, password: string): Driver | null {
+  const driverWithPassword = mockDrivers.find(d => d.phone === phone && d.password === password)
+  if (driverWithPassword) {
+    const { password: _, ...driverData } = driverWithPassword
+    return driverData
+  }
+  return null
+}
+
+export function getDriverById(driverId: string): Driver | undefined {
+  return drivers.get(driverId)
 }
 
 export function createOrder(data: {

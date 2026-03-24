@@ -11,12 +11,16 @@ let globalSocket: Socket | null = null
 export function useSocket() {
   const socketRef = useRef<Socket | null>(globalSocket)
   const {
+    driver,
     isOnline,
     addPendingOrder,
     removePendingOrder,
     setCurrentOrder,
     setLocation
   } = useDriverStore()
+
+  // 从 store 获取当前登录司机的 ID
+  const driverId = driver?.id
 
   // 使用 ref 保存最新的 store 方法，避免闭包问题
   const storeRef = useRef({
@@ -150,20 +154,24 @@ export function useSocket() {
   // 上线/下线控制
   useEffect(() => {
     const socket = socketRef.current
-    if (!socket) return
+    if (!socket || !driverId) return
 
     if (isOnline) {
       if (!socket.connected) {
         socket.connect()
       }
     } else {
-      socket.emit('driver:offline', { driverId: 'driver-1' })
+      socket.emit('driver:offline', { driverId })
       socket.disconnect()
     }
-  }, [isOnline])
+  }, [isOnline, driverId])
 
   // 上报司机位置（上线时调用）
   const emitDriverOnline = useCallback((lat: number, lng: number) => {
+    if (!driverId) {
+      console.error('无法上线：司机未登录')
+      return
+    }
     const socket = socketRef.current
     if (socket) {
       if (!socket.connected) {
@@ -171,8 +179,8 @@ export function useSocket() {
       }
       // 等待连接后再发送
       const sendOnline = () => {
-        socket.emit('driver:online', { driverId: 'driver-1', lat, lng })
-        console.log('Emitted driver:online', lat, lng)
+        socket.emit('driver:online', { driverId, lat, lng })
+        console.log('Emitted driver:online', driverId, lat, lng)
       }
       if (socket.connected) {
         sendOnline()
@@ -180,24 +188,26 @@ export function useSocket() {
         socket.once('connect', sendOnline)
       }
     }
-  }, [])
+  }, [driverId])
 
   // 上报司机位置（移动时调用）
   const emitLocation = useCallback((lat: number, lng: number) => {
+    if (!driverId) return
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('driver:location', { driverId: 'driver-1', lat, lng })
+      socket.emit('driver:location', { driverId, lat, lng })
       storeRef.current.setLocation({ address: '', lat, lng })
     }
-  }, [])
+  }, [driverId])
 
   // 接单
   const acceptOrder = useCallback((orderId: string) => {
+    if (!driverId) return
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('driver:accept', { orderId, driverId: 'driver-1' })
+      socket.emit('driver:accept', { orderId, driverId })
     }
-  }, [])
+  }, [driverId])
 
   // 拒单
   const rejectOrder = useCallback((orderId: string) => {
@@ -209,19 +219,21 @@ export function useSocket() {
 
   // 取消订单
   const emitOrderCancelled = useCallback((orderId: string) => {
+    if (!driverId) return
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('driver:cancel', { orderId, driverId: 'driver-1' })
+      socket.emit('driver:cancel', { orderId, driverId })
     }
-  }, [])
+  }, [driverId])
 
   // 更新订单状态
   const emitOrderStatus = useCallback((orderId: string, status: string) => {
+    if (!driverId) return
     const socket = socketRef.current
     if (socket && socket.connected) {
-      socket.emit('driver:status', { orderId, driverId: 'driver-1', status })
+      socket.emit('driver:status', { orderId, driverId, status })
     }
-  }, [])
+  }, [driverId])
 
   return {
     emitDriverOnline,

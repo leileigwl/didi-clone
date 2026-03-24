@@ -35,6 +35,7 @@ export interface Location {
 export type OrderStatus =
   | 'pending'
   | 'accepted'
+  | 'driver_arriving'
   | 'arrived'
   | 'passenger_confirmed'
   | 'in_progress'
@@ -70,6 +71,11 @@ export interface CreateOrderInput {
 
 export interface AuthResult {
   user: User
+  token: string
+}
+
+export interface DriverAuthResult {
+  driver: Driver
   token: string
 }
 
@@ -158,6 +164,48 @@ export class APIClient {
 
   async logout(): Promise<ApiResponse<null>> {
     const response = await this.request<null>('/api/auth/logout', {
+      method: 'POST'
+    })
+    this.setToken(null)
+    return response
+  }
+
+  // Driver Auth API
+  async driverLogin(phone: string, password: string): Promise<ApiResponse<DriverAuthResult>> {
+    const response = await this.request<DriverAuthResult>('/api/driver/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ phone, password })
+    })
+    if (response.code === 0 && response.data.token) {
+      this.setToken(response.data.token)
+    }
+    return response
+  }
+
+  async driverSendCode(phone: string): Promise<ApiResponse<{ phone: string }>> {
+    return this.request('/api/driver/auth/send-code', {
+      method: 'POST',
+      body: JSON.stringify({ phone })
+    })
+  }
+
+  async driverVerifyCode(phone: string, code: string): Promise<ApiResponse<DriverAuthResult>> {
+    const response = await this.request<DriverAuthResult>('/api/driver/auth/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code })
+    })
+    if (response.code === 0 && response.data.token) {
+      this.setToken(response.data.token)
+    }
+    return response
+  }
+
+  async getDriverInfo(): Promise<ApiResponse<Driver>> {
+    return this.request<Driver>('/api/driver/auth/me')
+  }
+
+  async driverLogout(): Promise<ApiResponse<null>> {
+    const response = await this.request<null>('/api/driver/auth/logout', {
       method: 'POST'
     })
     this.setToken(null)

@@ -21,6 +21,7 @@ export interface OrderHistory {
 interface DriverState {
   // Driver info
   driver: Driver | null
+  token: string | null
   isOnline: boolean
   isLoading: boolean
   error: string | null
@@ -39,6 +40,8 @@ interface DriverState {
 
   // Actions
   setDriver: (driver: Driver | null) => void
+  setToken: (token: string | null) => void
+  logout: () => void
   setOnline: (status: boolean) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -66,6 +69,7 @@ interface DriverState {
 
 const initialState = {
   driver: null,
+  token: null,
   isOnline: false,
   isLoading: false,
   error: null,
@@ -87,6 +91,11 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   ...initialState,
 
   setDriver: (driver) => set({ driver }),
+  setToken: (token) => set({ token }),
+  logout: () => {
+    localStorage.removeItem('driver_token')
+    set({ ...initialState })
+  },
   setOnline: (status) => set({ isOnline: status }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),

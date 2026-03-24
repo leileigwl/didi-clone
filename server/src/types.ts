@@ -60,6 +60,7 @@ export interface Order {
 export type OrderStatus =
   | 'pending'
   | 'accepted'
+  | 'driver_arriving'
   | 'arrived'
   | 'passenger_confirmed'
   | 'in_progress'

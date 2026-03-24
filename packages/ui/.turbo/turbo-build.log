@@ -1,0 +1,56 @@
+
+> @didi/ui@0.0.1 build /Users/leileigwl/Code/Daily/20260324/packages/ui
+> tsc
+
+components/Button/Button.tsx(2,20): error TS2307: Cannot find module 'classnames' or its corresponding type declarations.
+components/Button/Button.tsx(13,30): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Button/Button.tsx(21,27): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Button/Button.tsx(36,11): error TS1013: A rest parameter or binding pattern may not have a trailing comma.
+components/Button/index.ts(1,10): error TS2304: Cannot find name 'Button'.
+components/Button/index.ts(2,15): error TS2614: Module '"./Button"' has no exported member 'ButtonProps'. Did you mean to use 'import ButtonProps from "./Button"' instead?
+components/Card/Card.tsx(2,20): error TS2307: Cannot find module 'classnames' or its corresponding type declarations.
+components/Card/Card.tsx(13,30): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Card/index.ts(1,10): error TS2304: Cannot find name 'Card'.
+components/Card/index.ts(2,15): error TS2614: Module '"./Card"' has no exported member 'CardProps'. Did you mean to use 'import CardProps from "./Card"' instead?
+components/Input/index.ts(1,10): error TS2304: Cannot find name 'Input'.
+components/Input/index.ts(2,15): error TS2614: Module '"./Input"' has no exported member 'InputProps'. Did you mean to use 'import InputProps from "./Input"' instead?
+components/Input/Input.tsx(2,20): error TS2307: Cannot find module 'classnames' or its corresponding type declarations.
+components/Input/Input.tsx(4,11): error TS2430: Interface 'InputProps' incorrectly extends interface 'InputHTMLAttributes<HTMLInputElement>'.
+  Types of property 'size' are incompatible.
+    Type '"sm" | "md" | "lg" | undefined' is not assignable to type 'number | undefined'.
+      Type 'string' is not assignable to type 'number'.
+components/Input/Input.tsx(13,30): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Input/Input.tsx(19,27): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Map/DriverTracker.tsx(4,25): error TS6196: 'RouteInfo' is declared but never used.
+components/Map/LocationPicker.tsx(1,48): error TS6133: 'useEffect' is declared but its value is never read.
+components/Map/LocationPicker.tsx(48,32): error TS2503: Cannot find namespace 'AMap'.
+components/Map/LocationPicker.tsx(48,55): error TS2304: Cannot find name 'AMap'.
+components/Map/LocationPicker.tsx(51,44): error TS2503: Cannot find namespace 'AMap'.
+components/Map/LocationPicker.tsx(51,54): error TS2502: 'AMap' is referenced directly or indirectly in its own type annotation.
+components/Map/LocationPicker.tsx(76,12): error TS2503: Cannot find namespace 'AMap'.
+components/Map/LocationPicker.tsx(76,22): error TS2502: 'AMap' is referenced directly or indirectly in its own type annotation.
+components/Map/MapMarker.tsx(80,28): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapRoute.tsx(24,30): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapView.tsx(7,8): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapView.tsx(8,16): error TS2552: Cannot find name 'AMap'. Did you mean 'Map'?
+components/Map/MapView.tsx(32,22): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapView.tsx(32,32): error TS2502: 'AMap' is referenced directly or indirectly in its own type annotation.
+components/Map/MapView.tsx(37,39): error TS2552: Cannot find name 'AMap'. Did you mean 'Map'?
+components/Map/MapView.tsx(40,77): error TS2552: Cannot find name 'AMap'. Did you mean 'Map'?
+components/Map/MapView.tsx(97,25): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapView.tsx(101,50): error TS2503: Cannot find namespace 'AMap'.
+components/Map/MapView.tsx(102,59): error TS2552: Cannot find name 'AMap'. Did you mean 'Map'?
+components/Map/types.ts(147,11): error TS6196: 'Window' is declared but never used.
+components/Map/types.ts(148,16): error TS2708: Cannot use namespace 'AMap' as a value.
+components/Modal/index.ts(1,10): error TS2304: Cannot find name 'Modal'.
+components/Modal/index.ts(2,15): error TS2614: Module '"./Modal"' has no exported member 'ModalProps'. Did you mean to use 'import ModalProps from "./Modal"' instead?
+components/Modal/Modal.tsx(3,20): error TS2307: Cannot find module 'classnames' or its corresponding type declarations.
+components/Modal/Modal.tsx(14,27): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+components/Modal/Modal.tsx(28,9): error TS6133: 'handleEscape' is declared but its value is never read.
+ ELIFECYCLE  Command failed with exit code 2.

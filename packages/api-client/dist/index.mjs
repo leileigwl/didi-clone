@@ -60,6 +60,43 @@ var APIClient = class {
     this.setToken(null);
     return response;
   }
+  // Driver Auth API
+  async driverLogin(phone, password) {
+    const response = await this.request("/api/driver/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ phone, password })
+    });
+    if (response.code === 0 && response.data.token) {
+      this.setToken(response.data.token);
+    }
+    return response;
+  }
+  async driverSendCode(phone) {
+    return this.request("/api/driver/auth/send-code", {
+      method: "POST",
+      body: JSON.stringify({ phone })
+    });
+  }
+  async driverVerifyCode(phone, code) {
+    const response = await this.request("/api/driver/auth/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, code })
+    });
+    if (response.code === 0 && response.data.token) {
+      this.setToken(response.data.token);
+    }
+    return response;
+  }
+  async getDriverInfo() {
+    return this.request("/api/driver/auth/me");
+  }
+  async driverLogout() {
+    const response = await this.request("/api/driver/auth/logout", {
+      method: "POST"
+    });
+    this.setToken(null);
+    return response;
+  }
   // Orders API
   async createOrder(input) {
     return this.request("/api/orders", {

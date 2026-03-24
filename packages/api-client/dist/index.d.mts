@@ -25,7 +25,7 @@ interface Location {
     lat: number;
     lng: number;
 }
-type OrderStatus = 'pending' | 'accepted' | 'arrived' | 'passenger_confirmed' | 'in_progress' | 'completed' | 'cancelled';
+type OrderStatus = 'pending' | 'accepted' | 'driver_arriving' | 'arrived' | 'passenger_confirmed' | 'in_progress' | 'completed' | 'cancelled';
 interface Order {
     id: string;
     userId: string;
@@ -53,6 +53,10 @@ interface CreateOrderInput {
 }
 interface AuthResult {
     user: User;
+    token: string;
+}
+interface DriverAuthResult {
+    driver: Driver;
     token: string;
 }
 interface DriverLocationEvent {
@@ -83,6 +87,13 @@ declare class APIClient {
     verifyCode(phone: string, code: string): Promise<ApiResponse<AuthResult>>;
     getCurrentUser(): Promise<ApiResponse<User>>;
     logout(): Promise<ApiResponse<null>>;
+    driverLogin(phone: string, password: string): Promise<ApiResponse<DriverAuthResult>>;
+    driverSendCode(phone: string): Promise<ApiResponse<{
+        phone: string;
+    }>>;
+    driverVerifyCode(phone: string, code: string): Promise<ApiResponse<DriverAuthResult>>;
+    getDriverInfo(): Promise<ApiResponse<Driver>>;
+    driverLogout(): Promise<ApiResponse<null>>;
     createOrder(input: CreateOrderInput): Promise<ApiResponse<Order>>;
     getOrders(): Promise<ApiResponse<Order[]>>;
     getOrder(id: string): Promise<ApiResponse<Order>>;
@@ -124,4 +135,4 @@ declare class APIClient {
 }
 declare const apiClient: APIClient;
 
-export { APIClient, type ApiResponse, type AuthResult, type CreateOrderInput, type Driver, type DriverLocationEvent, type Location, type Order, type OrderStatus, type OrderStatusEvent, type User, apiClient, APIClient as default };
+export { APIClient, type ApiResponse, type AuthResult, type CreateOrderInput, type Driver, type DriverAuthResult, type DriverLocationEvent, type Location, type Order, type OrderStatus, type OrderStatusEvent, type User, apiClient, APIClient as default };

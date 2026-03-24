@@ -3,6 +3,7 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
 import authRoutes from './routes/auth'
+import driverAuthRoutes from './routes/driverAuth'
 import orderRoutes, { setSocketServerForOrders } from './routes/orders'
 import driverRoutes, { setSocketServer } from './routes/drivers'
 import adminRoutes from './routes/admin'
@@ -51,6 +52,7 @@ app.get('/api/health', (req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/driver/auth', driverAuthRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/drivers', driverRoutes)
 app.use('/api/admin', adminRoutes)
