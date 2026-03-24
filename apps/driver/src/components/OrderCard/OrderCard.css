@@ -1,0 +1,191 @@
+.order-card {
+  background: #2d2d44;
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Countdown Bar */
+.countdown-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #4d4d64;
+}
+
+.countdown-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #7AC9A8, #E8A45C);
+  transition: width 1s linear;
+}
+
+/* Order Header */
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.order-price-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.order-price {
+  font-size: 28px;
+  font-weight: 700;
+  color: #7AC9A8;
+}
+
+.order-distance {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.order-time-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.order-duration {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.order-label {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Route Info */
+.order-route-info {
+  margin-bottom: 16px;
+}
+
+.route-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.point-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.point-marker.pickup {
+  background: #E8A45C;
+}
+
+.point-marker.destination {
+  background: #7AC9A8;
+}
+
+.point-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.point-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.point-address {
+  font-size: 14px;
+  color: #fff;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-line {
+  width: 2px;
+  height: 24px;
+  background: linear-gradient(to bottom, #E8A45C, #7AC9A8);
+  margin-left: 5px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* Trip Details Row */
+.trip-details-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #4d4d64;
+}
+
+.detail-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.detail-badge.earnings {
+  background: rgba(122, 201, 168, 0.2);
+  color: #7AC9A8;
+  font-weight: 600;
+}
+
+.badge-icon {
+  font-size: 14px;
+}
+
+/* Action Buttons */
+.order-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.reject-btn,
+.accept-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reject-btn {
+  background: transparent;
+  border: 2px solid #e74c3c;
+  color: #e74c3c;
+}
+
+.reject-btn:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.accept-btn {
+  background: #7AC9A8;
+  color: #1a1a2e;
+}
+
+.accept-btn:hover {
+  background: #6ab897;
+  transform: translateY(-2px);
+}
