@@ -82,7 +82,7 @@ function loadAMapScript(key: string, securityCode?: string): Promise<typeof AMap
 const MapView: React.FC<MapViewProps> = ({
   amapKey = '7bf10417175742fc23ec515c46599e8d',
   securityJsCode = '2d974a0b6b5a0df9c012c82a33684e15',
-  center = { lng: 116.397428, lat: 39.90923 },
+  center = { lng: 120.075, lat: 29.306 },
   zoom = 15,
   theme = 'normal',
   enableClick = false,

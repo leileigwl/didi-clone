@@ -1,5 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDriverStore } from '../store/driverStore'
+
+interface AMapInstance {
+  map: any
+  AMap: any
+}
 
 interface GeolocationOptions {
   enableHighAccuracy?: boolean
@@ -17,76 +22,132 @@ export function useLocation(options: GeolocationOptions = defaultOptions) {
   const [error, setError] = useState<string | null>(null)
   const [isTracking, setIsTracking] = useState(false)
   const { setLocation, setLocationTracking } = useDriverStore()
+  const amapRef = useRef<AMapInstance | null>(null)
+  const watchIdRef = useRef<any>(null)
 
-  // Start location tracking
+  // 由地图组件调用，注入 AMap 实例
+  const setAMapRef = useCallback((ref: AMapInstance) => {
+    amapRef.current = ref
+  }, [])
+
+  // Start location tracking using AMap.Geolocation
   const startTracking = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser')
+    const { AMap, map } = amapRef.current || {}
+    if (!AMap || !map) {
+      // 地图尚未加载，尝试 CoreLocation
+      if (window.electronAPI?.getNativeLocation) {
+        window.electronAPI.getNativeLocation().then((result: any) => {
+          if ('lat' in result && 'lng' in result) {
+            setLocation({ address: '', lat: result.lat, lng: result.lng })
+          }
+        })
+      }
       return
     }
 
     setIsTracking(true)
     setLocationTracking(true)
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords
-        setLocation({
-          address: '',
-          lat: latitude,
-          lng: longitude
-        })
-        setError(null)
-      },
-      (err) => {
-        setError(err.message)
-        console.error('Location error:', err)
-      },
-      {
-        ...defaultOptions,
-        ...options
-      }
-    )
+    AMap.plugin(['AMap.Geolocation'], () => {
+      const geolocation = new AMap.Geolocation({
+        enableHighAccuracy: options.enableHighAccuracy ?? true,
+        timeout: options.timeout ?? 10000,
+        maximumAge: options.maximumAge ?? 0,
+        GeoLocationFirst: false,
+        noGeoLocation: 2,
+        noIpLocate: 0,
+        extensions: 'all',
+      })
+
+      // 持续追踪位置
+      geolocation.watchPosition((status: string, result: any) => {
+        if (status === 'complete' && result.position) {
+          const lat = result.position.getLat()
+          const lng = result.position.getLng()
+          setLocation({
+            address: result.formattedAddress || '',
+            lat,
+            lng
+          })
+          setError(null)
+        }
+      })
+
+      // 添加到地图上
+      map.addControl(geolocation)
+      watchIdRef.current = geolocation
+    })
 
     return () => {
-      navigator.geolocation.clearWatch(watchId)
+      if (watchIdRef.current && map) {
+        map.removeControl(watchIdRef.current)
+        watchIdRef.current = null
+      }
       setIsTracking(false)
       setLocationTracking(false)
     }
   }, [setLocation, setLocationTracking, options])
 
-  // Get current position once
-  const getCurrentPosition = useCallback(() => {
-    return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported'))
-        return
+  // Get current position once using AMap.Geolocation
+  const getCurrentPosition = useCallback((): Promise<{ lat: number; lng: number; address?: string }> => {
+    return new Promise((resolve, reject) => {
+      // 优先使用 CoreLocation (macOS 精确定位)
+      if (window.electronAPI?.getNativeLocation) {
+        window.electronAPI.getNativeLocation().then((result: any) => {
+          if ('lat' in result && 'lng' in result) {
+            resolve({ lat: result.lat, lng: result.lng })
+            return
+          }
+          // CoreLocation 失败，尝试 AMap
+          resolveWithAMap(resolve, reject)
+        }).catch(() => resolveWithAMap(resolve, reject))
+      } else {
+        resolveWithAMap(resolve, reject)
       }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (err) => {
-          setError(err.message)
-          reject(err)
-        },
-        {
-          ...defaultOptions,
-          ...options
-        }
-      )
     })
-  }, [options])
+  }, [])
+
+  const resolveWithAMap = (
+    resolve: (value: { lat: number; lng: number; address?: string }) => void,
+    reject: (reason: Error) => void
+  ) => {
+    const { AMap } = amapRef.current || {}
+    if (!AMap) {
+      reject(new Error('地图未加载，无法定位'))
+      return
+    }
+
+    AMap.plugin(['AMap.Geolocation'], () => {
+      const geolocation = new AMap.Geolocation({
+        enableHighAccuracy: options.enableHighAccuracy ?? true,
+        timeout: options.timeout ?? 10000,
+        GeoLocationFirst: false,
+        noGeoLocation: 2,
+        noIpLocate: 0,
+        extensions: 'all',
+      })
+
+      geolocation.getCurrentPosition((status: string, result: any) => {
+        if (status === 'complete' && result.position) {
+          resolve({
+            lat: result.position.getLat(),
+            lng: result.position.getLng(),
+            address: result.formattedAddress || undefined
+          })
+        } else {
+          setError('高德定位失败')
+          reject(new Error('高德定位失败'))
+        }
+      })
+    })
+  }
 
   return {
     error,
     isTracking,
     startTracking,
-    getCurrentPosition
+    getCurrentPosition,
+    setAMapRef
   }
 }
 

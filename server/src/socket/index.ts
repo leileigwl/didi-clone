@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io'
-import { orders, drivers, updateDriverLocation, updateDriverStatus, getNearbyDrivers, calculateDistance, updateOrderStatus } from '../store'
+import { orders, drivers, updateDriverLocation, updateDriverStatus, getNearbyDrivers, calculateDistance, calculateDrivingDistance, updateOrderStatus } from '../store'
 
 // Track online drivers by socket id
 const driverSockets = new Map<string, { driverId: string; lat: number; lng: number }>()
@@ -180,24 +180,35 @@ export function broadcastToNearbyDrivers(
     duration: number
   }
 ) {
-  // Find all online drivers
+  // 先用直线距离快速筛选 5km 内的司机
+  const nearbySockets: Array<{ socketId: string; driverId: string; lat: number; lng: number }> = []
   for (const [socketId, driverInfo] of driverSockets.entries()) {
     const distance = calculateDistance(
       pickup.lat, pickup.lng,
       driverInfo.lat, driverInfo.lng
     )
-
-    // Only notify drivers within 5km
     if (distance <= 5) {
-      io.to(socketId).emit('new:order', {
-        orderId,
-        ...orderData,
-        distanceFromDriver: Math.round(distance * 10) / 10,
-        timestamp: new Date().toISOString()
-      })
-      console.log(`Notified driver ${driverInfo.driverId} (distance: ${distance.toFixed(1)}km) about new order ${orderId}`)
+      nearbySockets.push({ socketId, ...driverInfo })
     }
   }
+
+  if (nearbySockets.length === 0) return
+
+  // 用高德 REST API 获取真实驾车距离
+  const origins = nearbySockets.map(d => ({ lat: d.lat, lng: d.lng }))
+  calculateDrivingDistance(origins, pickup).then(results => {
+    results.forEach((result, idx) => {
+      const driverInfo = nearbySockets[idx]
+      io.to(driverInfo.socketId).emit('new:order', {
+        orderId,
+        ...orderData,
+        distanceFromDriver: Math.round(result.distance * 10) / 10,
+        durationFromDriver: Math.round(result.duration),
+        timestamp: new Date().toISOString()
+      })
+      console.log(`Notified driver ${driverInfo.driverId} (驾车距离: ${result.distance.toFixed(1)}km) about new order ${orderId}`)
+    })
+  })
 }
 
 // Helper to broadcast to order room
@@ -215,29 +226,31 @@ export function broadcastOrderUpdate(
 }
 
 // Auto-accept order simulation
-export function simulateOrderFlow(io: Server, orderId: string) {
+export async function simulateOrderFlow(io: Server, orderId: string) {
   const order = orders.get(orderId)
   if (!order || order.status !== 'pending') return
 
-  // Find nearest idle driver
-  let nearestDriverId: string | null = null
-  let nearestDist = Infinity
-  for (const [id, driver] of drivers.entries()) {
-    if (driver.status !== 'idle') continue
-    const dist = calculateDistance(order.pickup.lat, order.pickup.lng, driver.location.lat, driver.location.lng)
-    if (dist < nearestDist) {
-      nearestDist = dist
-      nearestDriverId = id
-    }
-  }
-
-  if (!nearestDriverId) {
+  // 用高德 REST API 找到驾车距离最近的空闲司机
+  const idleDrivers = Array.from(drivers.entries()).filter(([, d]) => d.status === 'idle')
+  if (idleDrivers.length === 0) {
     console.log(`No idle driver available for order ${orderId}`)
     return
   }
 
-  const driverId = nearestDriverId
-  const driver = drivers.get(driverId)!
+  const origins = idleDrivers.map(([, d]) => ({ lat: d.location.lat, lng: d.location.lng }))
+  const results = await calculateDrivingDistance(origins, order.pickup)
+
+  let nearestIdx = 0
+  let nearestDist = Infinity
+  results.forEach((r, idx) => {
+    if (r.distance < nearestDist) {
+      nearestDist = r.distance
+      nearestIdx = idx
+    }
+  })
+
+  const [driverId, driver] = idleDrivers[nearestIdx]
+  console.log(`[Auto] Nearest driver ${driverId} is ${nearestDist.toFixed(1)}km away from order ${orderId}`)
 
   // 3秒后自动接单
   setTimeout(() => {

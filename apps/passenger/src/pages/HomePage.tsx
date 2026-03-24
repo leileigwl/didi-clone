@@ -161,14 +161,25 @@ export default function HomePage({ api }: HomePageProps) {
             lat: tip.location.getLat(),
           }))
 
-        // 先设置搜索结果（无距离），再异步计算距离
-        if (type === 'pickup') setPickupResults(results)
-        else setDestResults(results)
-
-        // 用 AMap.Driving 逐个计算搜索结果到参考点的驾车距离
+        // 用 AMap.GeometryUtil.distance 即时计算直线距离（同步，无需网络）
         const refPoint = type === 'destination'
           ? (pickup || currentLocation)
           : currentLocation
+        if (refPoint && results.length > 0 && mapRef.current?.AMap) {
+          const AMap = mapRef.current.AMap
+          results.forEach(item => {
+            const p1 = new AMap.LngLat(refPoint.lng, refPoint.lat)
+            const p2 = new AMap.LngLat(item.lng, item.lat)
+            const dist = AMap.GeometryUtil.distance(p1, p2) // 米
+            item.distance = dist >= 1000 ? `${(dist / 1000).toFixed(1)}km` : `${Math.round(dist)}m`
+          })
+        }
+
+        // 设置带直线距离的结果
+        if (type === 'pickup') setPickupResults(results)
+        else setDestResults(results)
+
+        // 再用 AMap.Driving 异步获取精确驾车距离（覆盖直线距离）
         if (refPoint && results.length > 0 && mapRef.current?.AMap) {
           const AMap = mapRef.current.AMap
           AMap.plugin(['AMap.Driving'], () => {
@@ -180,8 +191,8 @@ export default function HomePage({ api }: HomePageProps) {
                 (s: string, r: any) => {
                   if (s === 'complete' && r.routes?.length > 0) {
                     const d = r.routes[0].distance
-                    const distStr = d >= 1000 ? `${(d / 1000).toFixed(1)}km` : `${Math.round(d)}m`
-                    // 用函数式更新避免 stale closure
+                    const dur = Math.ceil(r.routes[0].time / 60)
+                    const distStr = d >= 1000 ? `${(d / 1000).toFixed(1)}km · ${dur}min` : `${Math.round(d)}m · ${dur}min`
                     if (type === 'pickup') {
                       setPickupResults(prev => {
                         const updated = [...prev]
@@ -407,10 +418,22 @@ export default function HomePage({ api }: HomePageProps) {
   // 预设距离缓存
   const [presetDistances, setPresetDistances] = useState<Record<string, string>>({})
 
-  // 用高德 JS API AMap.Driving 逐个计算预设距离
+  // 用高德 GeometryUtil 即时显示直线距离，再异步用 Driving 获取驾车距离
   useEffect(() => {
     if (!currentLocation || !mapRef.current?.AMap) return
     const AMap = mapRef.current.AMap
+
+    // 1. 同步计算直线距离（即时显示）
+    const straightDistances: Record<string, string> = {}
+    presetDestinations.forEach(dest => {
+      const p1 = new AMap.LngLat(currentLocation.lng, currentLocation.lat)
+      const p2 = new AMap.LngLat(dest.lng, dest.lat)
+      const dist = AMap.GeometryUtil.distance(p1, p2)
+      straightDistances[dest.name] = dist >= 1000 ? `${(dist / 1000).toFixed(1)}km` : `${Math.round(dist)}m`
+    })
+    setPresetDistances(straightDistances)
+
+    // 2. 异步用 AMap.Driving 获取驾车距离+时间（覆盖直线距离）
     AMap.plugin(['AMap.Driving'], () => {
       presetDestinations.forEach(dest => {
         const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })

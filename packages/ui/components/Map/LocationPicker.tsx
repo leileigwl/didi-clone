@@ -34,7 +34,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   style,
 }) => {
   const [position, setPosition] = useState<Position>(
-    initialPosition || { lng: 116.397428, lat: 39.90923 }
+    initialPosition || { lng: 120.075, lat: 29.306 }
   );
   const [address, setAddress] = useState<string>('');
   const [isLocating, setIsLocating] = useState(false);
