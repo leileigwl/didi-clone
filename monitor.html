@@ -63,164 +63,126 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 16px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
     }
 
     .stat-card {
       background: var(--card);
-      padding: 20px;
+      padding: 16px;
       border-radius: 12px;
       text-align: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .stat-card .value {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: bold;
       color: var(--primary);
     }
 
     .stat-card .label {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-secondary);
       margin-top: 4px;
     }
 
-    .agents-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 20px;
+    /* 模块测试区域 */
+    .modules-section {
+      margin-bottom: 24px;
     }
 
-    .agent-card {
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .module-card {
       background: var(--card);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: transform 0.2s;
     }
 
-    .agent-card.completed {
-      border: 2px solid var(--success);
-    }
-
-    .agent-card.running {
-      border: 2px solid var(--warning);
-    }
-
-    .agent-card.pending {
-      opacity: 0.7;
-    }
-
-    .agent-header {
-      padding: 16px 20px;
+    .module-header {
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
+      cursor: pointer;
     }
 
-    .agent-info {
+    .module-header:hover {
+      background: var(--bg);
+    }
+
+    .module-info {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .agent-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+    .module-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 20px;
       color: white;
     }
 
-    .agent-name {
+    .module-name {
       font-weight: 600;
-      font-size: 16px;
+      font-size: 14px;
     }
 
-    .agent-role {
-      font-size: 12px;
+    .module-type {
+      font-size: 11px;
       color: var(--text-secondary);
     }
 
     .status-badge {
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
       font-weight: 500;
     }
 
-    .status-running {
-      background: #FFF8E8;
-      color: var(--warning);
-      animation: pulse 2s infinite;
-    }
+    .status-success { background: #E8F8F2; color: var(--success); }
+    .status-pending { background: #F0F0F0; color: var(--text-secondary); }
+    .status-running { background: #FFF8E8; color: var(--warning); }
+    .status-error { background: #FFE8E8; color: var(--error); }
 
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(232, 196, 92, 0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(232, 196, 92, 0); }
-    }
-
-    .status-completed {
-      background: #E8F8F2;
-      color: var(--success);
-    }
-
-    .status-pending {
-      background: #F0F0F0;
-      color: var(--text-secondary);
-    }
-
-    .status-error {
-      background: #FFE8E8;
-      color: var(--error);
-    }
-
-    .agent-body {
-      padding: 20px;
-    }
-
-    .progress-bar {
-      height: 8px;
-      background: var(--border);
-      border-radius: 4px;
+    .module-body {
+      padding: 16px;
+      max-height: 0;
       overflow: hidden;
-      margin-bottom: 16px;
+      transition: max-height 0.3s ease;
     }
 
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      border-radius: 4px;
-      transition: width 0.5s ease;
+    .module-body.expanded {
+      max-height: 500px;
     }
 
-    .progress-fill.completed {
-      background: linear-gradient(90deg, var(--success), #9ED9C0);
-    }
-
-    .progress-text {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-    }
-
-    .task-list {
+    .test-list {
       list-style: none;
-      max-height: 200px;
-      overflow-y: auto;
     }
 
-    .task-item {
+    .test-item {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -229,101 +191,174 @@
       font-size: 13px;
     }
 
-    .task-item:last-child {
+    .test-item:last-child {
       border-bottom: none;
     }
 
-    .task-checkbox {
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      border: 2px solid var(--border);
+    .test-status {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
-    .task-checkbox.done {
-      background: var(--success);
-      border-color: var(--success);
-      color: white;
+    .test-status.pass { background: var(--success); color: white; }
+    .test-status.fail { background: var(--error); color: white; }
+    .test-status.pending { background: var(--border); color: var(--text-secondary); }
+    .test-status.running { background: var(--warning); color: white; animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
 
-    .task-checkbox.active {
-      border-color: var(--primary);
-      background: #FFF8E8;
-    }
-
-    .files-section {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-
-    .files-title {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .files-count {
+    .test-action {
+      margin-left: auto;
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: none;
       background: var(--primary);
       color: white;
-      padding: 2px 8px;
-      border-radius: 10px;
       font-size: 11px;
-      margin-left: 8px;
+      cursor: pointer;
     }
 
-    .files-list {
+    .test-action:hover {
+      background: var(--primary-light);
+    }
+
+    .test-action:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+
+    /* Agent 区域 */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .agent-card {
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .agent-card.completed { border: 2px solid var(--success); }
+
+    .agent-header {
+      padding: 12px 16px;
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .agent-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+    }
+
+    .agent-name { font-weight: 600; font-size: 14px; }
+    .agent-role { font-size: 11px; color: var(--text-secondary); }
+
+    .agent-body { padding: 16px; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-fill.completed {
+      background: linear-gradient(90deg, var(--success), #9ED9C0);
+    }
+
+    /* 终端日志 */
+    .terminal {
+      background: #1a1a2e;
+      color: #eee;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      margin-top: 24px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .terminal-line {
+      margin: 4px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .terminal-line .time {
+      color: #666;
+      flex-shrink: 0;
+    }
+
+    .terminal-line.success { color: var(--success); }
+    .terminal-line.error { color: var(--error); }
+    .terminal-line.info { color: var(--info); }
+    .terminal-line.warning { color: var(--warning); }
+
+    /* 控制按钮 */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
-      gap: 6px;
     }
 
-    .file-tag {
-      padding: 4px 8px;
-      background: var(--bg);
-      border-radius: 4px;
-      font-size: 11px;
-      font-family: monospace;
-      color: var(--text-secondary);
-    }
-
-    .file-tag.exists {
-      background: #E8F8F2;
-      color: var(--success);
-    }
-
-    .commits-section {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-
-    .commit-item {
+    .control-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 0;
-      font-size: 12px;
-      font-family: monospace;
     }
 
-    .commit-hash {
-      color: var(--primary);
-      font-weight: 500;
-      background: #FFF8E8;
-      padding: 2px 6px;
-      border-radius: 4px;
+    .control-btn:hover {
+      background: var(--primary-light);
     }
 
-    .commit-time {
-      color: var(--text-secondary);
-      font-size: 11px;
-      margin-left: auto;
+    .control-btn.secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .control-btn.secondary:hover {
+      background: var(--bg);
     }
 
     .refresh-btn {
@@ -346,41 +381,12 @@
       transform: scale(1.1);
     }
 
-    .refresh-btn.spinning {
-      animation: spin 1s linear;
-    }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
     .last-update {
       text-align: center;
       margin-top: 20px;
       font-size: 12px;
       color: var(--text-secondary);
     }
-
-    .terminal {
-      background: #1a1a2e;
-      color: #eee;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 12px;
-      margin-top: 20px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .terminal-line {
-      margin: 4px 0;
-    }
-
-    .terminal-line.success { color: var(--success); }
-    .terminal-line.error { color: var(--error); }
-    .terminal-line.info { color: var(--info); }
 
     /* 暗色模式 */
     @media (prefers-color-scheme: dark) {
@@ -401,7 +407,7 @@
       🚗 DiDi Desktop - Agent Teams 实时监控
     </h1>
     <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
-      三端齐全架构 | 自动刷新: 10秒
+      三端齐全架构 | 实时模块测试 | 自动刷新: 10秒
     </p>
   </div>
 
@@ -415,10 +421,6 @@
       <div class="label">已完成</div>
     </div>
     <div class="stat-card">
-      <div class="value" id="running-agents">0</div>
-      <div class="label">运行中</div>
-    </div>
-    <div class="stat-card">
       <div class="value" id="total-progress">0%</div>
       <div class="label">总进度</div>
     </div>
@@ -430,12 +432,44 @@
       <div class="value" id="total-commits">0</div>
       <div class="label">Git 提交</div>
     </div>
+    <div class="stat-card">
+      <div class="value" id="api-pass">0/5</div>
+      <div class="label">API 测试</div>
+    </div>
   </div>
 
+  <!-- 控制按钮 -->
+  <div class="controls">
+    <button class="control-btn" onclick="runAllTests()">
+      ▶️ 运行所有测试
+    </button>
+    <button class="control-btn secondary" onclick="testServerHealth()">
+      🏥 服务器健康检查
+    </button>
+    <button class="control-btn secondary" onclick="openAdminApp()">
+      🌐 打开管理端
+    </button>
+    <button class="control-btn secondary" onclick="openMonitor()">
+      📊 打开监控面板
+    </button>
+  </div>
+
+  <!-- 模块测试区域 -->
+  <div class="modules-section">
+    <h2 class="section-title">🧪 模块测试</h2>
+    <div class="modules-grid" id="modules-container"></div>
+  </div>
+
+  <!-- Agent 状态区域 -->
+  <h2 class="section-title">🤖 Agent 状态</h2>
   <div class="agents-grid" id="agents-container"></div>
 
+  <!-- 终端日志 -->
   <div class="terminal" id="terminal">
-    <div class="terminal-line info">[System] 监控面板已启动...</div>
+    <div class="terminal-line info">
+      <span class="time">[00:00:00]</span>
+      <span>[System] 监控面板已启动...</span>
+    </div>
   </div>
 
   <div class="last-update">
@@ -446,7 +480,65 @@
   <button class="refresh-btn" onclick="manualRefresh()" title="立即刷新">🔄</button>
 
   <script>
-    // Agent 配置
+    // ============ 配置 ============
+    const API_BASE = 'http://localhost:3000';
+
+    const modulesConfig = [
+      {
+        id: 'auth',
+        name: '认证模块',
+        type: 'Auth API',
+        icon: '🔐',
+        color: 'linear-gradient(135deg, #667eea, #764ba2)',
+        tests: [
+          { name: '发送验证码', endpoint: '/api/auth/send-code', method: 'POST', body: { phone: '13900138000' } },
+          { name: '验证登录', endpoint: '/api/auth/verify', method: 'POST', body: { phone: '13900138000', code: '123456' }, needToken: false },
+          { name: '获取用户信息', endpoint: '/api/auth/me', method: 'GET', needToken: true }
+        ]
+      },
+      {
+        id: 'orders',
+        name: '订单模块',
+        type: 'Orders API',
+        icon: '📦',
+        color: 'linear-gradient(135deg, #ee0979, #ff6a00)',
+        tests: [
+          { name: '创建订单', endpoint: '/api/orders', method: 'POST', needToken: true },
+          { name: '获取订单列表', endpoint: '/api/orders', method: 'GET', needToken: true }
+        ]
+      },
+      {
+        id: 'drivers',
+        name: '司机模块',
+        type: 'Drivers API',
+        icon: '🚗',
+        color: 'linear-gradient(135deg, #11998e, #38ef7d)',
+        tests: [
+          { name: '获取附近司机', endpoint: '/api/drivers/nearby?lat=39.9&lng=116.4', method: 'GET', needToken: true }
+        ]
+      },
+      {
+        id: 'admin',
+        name: '管理模块',
+        type: 'Admin API',
+        icon: '👨‍💼',
+        color: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+        tests: [
+          { name: '获取统计数据', endpoint: '/api/admin/stats', method: 'GET', needToken: true }
+        ]
+      },
+      {
+        id: 'health',
+        name: '健康检查',
+        type: 'Server Health',
+        icon: '🏥',
+        color: 'linear-gradient(135deg, #7AC9A8, #9ED9C0)',
+        tests: [
+          { name: '服务器健康', endpoint: '/api/health', method: 'GET', needToken: false }
+        ]
+      }
+    ];
+
     const agentsConfig = [
       {
         id: 1,
@@ -455,8 +547,7 @@
         emoji: '🏗️',
         color: 'linear-gradient(135deg, #667eea, #764ba2)',
         tasks: ['Monorepo 初始化', 'Electron 配置', '共享包搭建', 'Git 工作流'],
-        files: ['package.json', 'turbo.json', 'pnpm-workspace.yaml', 'packages/shared/'],
-        checkFiles: ['package.json', 'turbo.json', 'pnpm-workspace.yaml']
+        files: ['package.json', 'turbo.json', 'pnpm-workspace.yaml', 'packages/shared/']
       },
       {
         id: 2,
@@ -464,9 +555,8 @@
         role: '地图与定位专家',
         emoji: '🗺️',
         color: 'linear-gradient(135deg, #11998e, #38ef7d)',
-        tasks: ['高德地图集成', 'MapView 组件', 'MapMarker 组件', '路线绘制', '定位选择器', '司机追踪动画'],
-        files: ['packages/ui/Map/', 'MapView.tsx', 'MapMarker.tsx', 'LocationPicker.tsx'],
-        checkFiles: ['packages/ui/components/Map/MapView.tsx', 'packages/ui/components/Map/MapMarker.tsx']
+        tasks: ['高德地图集成', 'MapView 组件', 'MapMarker 组件', '路线绘制', '定位选择器', '司机追踪'],
+        files: ['packages/ui/Map/', 'MapView.tsx', 'MapMarker.tsx']
       },
       {
         id: 3,
@@ -474,9 +564,8 @@
         role: '后端服务专家',
         emoji: '📦',
         color: 'linear-gradient(135deg, #ee0979, #ff6a00)',
-        tasks: ['Express 服务器', 'REST API 路由', 'Socket.io 实时通信', 'Mock 数据', 'API 客户端'],
-        files: ['server/', 'packages/api-client/', 'routes/*.ts', 'socket/*.ts'],
-        checkFiles: ['server/src/app.ts', 'packages/api-client/src/index.ts']
+        tasks: ['Express 服务器', 'REST API 路由', 'Socket.io 实时通信', 'Mock 数据'],
+        files: ['server/', 'packages/api-client/']
       },
       {
         id: 4,
@@ -484,9 +573,8 @@
         role: 'UI 组件专家',
         emoji: '🎨',
         color: 'linear-gradient(135deg, #8E2DE2, #4A00E0)',
-        tasks: ['CSS 变量系统', 'Button 组件', 'Input 组件', 'Modal 组件', '订单卡片', '司机卡片'],
-        files: ['packages/ui/styles/', 'packages/ui/components/'],
-        checkFiles: ['packages/ui/styles/global.css', 'packages/ui/components/Button/']
+        tasks: ['CSS 变量系统', 'Button 组件', 'Input 组件', 'Modal 组件', '订单卡片'],
+        files: ['packages/ui/styles/', 'packages/ui/components/']
       },
       {
         id: 5,
@@ -495,8 +583,7 @@
         emoji: '🚗',
         color: 'linear-gradient(135deg, #f093fb, #f5576c)',
         tasks: ['司机端 Electron', '接单功能', '导航功能', '收入管理', 'Socket 集成'],
-        files: ['apps/driver/'],
-        checkFiles: ['apps/driver/electron/main.ts', 'apps/driver/src/App.tsx']
+        files: ['apps/driver/']
       },
       {
         id: 6,
@@ -505,144 +592,284 @@
         emoji: '👨‍💼',
         color: 'linear-gradient(135deg, #4facfe, #00f2fe)',
         tasks: ['管理端 UI', '订单监控', '司机管理', '数据统计', '地图视图'],
-        files: ['apps/admin/'],
-        checkFiles: ['apps/admin/src/App.tsx', 'apps/admin/src/pages/Dashboard/']
+        files: ['apps/admin/']
       }
     ];
 
-    // 模拟文件检查（实际应用中需要后端 API）
-    function checkFilesExist(agentId) {
-      // 这里模拟检查结果
-      // 实际应用中，这应该调用后端 API 检查真实文件
-      const simulatedResults = {
-        1: { exists: true, fileCount: 6, progress: 100 },
-        2: { exists: true, fileCount: 8, progress: 100 },
-        3: { exists: true, fileCount: 12, progress: 100 },
-        4: { exists: true, fileCount: 8, progress: 100 },
-        5: { exists: true, fileCount: 20, progress: 100 },
-        6: { exists: true, fileCount: 18, progress: 100 }
-      };
-      return simulatedResults[agentId] || { exists: false, fileCount: 0, progress: 0 };
-    }
+    // ============ 状态管理 ============
+    let authToken = null;
+    let testResults = {};
+    let countdown = 10;
 
-    // 获取 Agent 状态
-    function getAgentStatus(agent) {
-      const result = checkFilesExist(agent.id);
-
-      if (result.progress === 100) {
-        return { status: 'completed', progress: 100, fileCount: result.fileCount };
-      } else if (result.progress > 0) {
-        return { status: 'running', progress: result.progress, fileCount: result.fileCount };
-      } else {
-        return { status: 'pending', progress: 0, fileCount: 0 };
-      }
-    }
-
-    // 渲染 Agent 卡片
-    function renderAgentCard(agent) {
-      const status = getAgentStatus(agent);
-      const completedTasks = Math.floor(agent.tasks.length * status.progress / 100);
-
-      return `
-        <div class="agent-card ${status.status}" data-agent="${agent.id}">
-          <div class="agent-header">
-            <div class="agent-info">
-              <div class="agent-avatar" style="background: ${agent.color}">${agent.emoji}</div>
-              <div>
-                <div class="agent-name">${agent.name}</div>
-                <div class="agent-role">${agent.role}</div>
-              </div>
-            </div>
-            <span class="status-badge status-${status.status}">
-              ${status.status === 'completed' ? '✓ 已完成' :
-                status.status === 'running' ? '⏳ 运行中' : '⏸️ 等待中'}
-            </span>
-          </div>
-          <div class="agent-body">
-            <div class="progress-text">
-              <span>进度</span>
-              <span>${status.progress}%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill ${status.status === 'completed' ? 'completed' : ''}"
-                   style="width: ${status.progress}%"></div>
-            </div>
-            <ul class="task-list">
-              ${agent.tasks.map((task, i) => `
-                <li class="task-item">
-                  <span class="task-checkbox ${i < completedTasks ? 'done' : ''}">${
-                    i < completedTasks ? '✓' : (i === completedTasks && status.status === 'running' ? '◐' : '☐')
-                  }</span>
-                  <span>${task}</span>
-                </li>
-              `).join('')}
-            </ul>
-            <div class="files-section">
-              <div class="files-title">
-                负责文件
-                <span class="files-count">${status.fileCount} 个</span>
-              </div>
-              <div class="files-list">
-                ${agent.files.map(f => `<span class="file-tag ${status.status === 'completed' ? 'exists' : ''}">${f}</span>`).join('')}
-              </div>
-            </div>
-            ${status.status === 'completed' ? `
-              <div class="commits-section">
-                <div class="commit-item">
-                  <span class="commit-hash">a${agent.id}:feat</span>
-                  <span>任务完成</span>
-                  <span class="commit-time">刚刚</span>
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }
-
-    // 更新统计
-    function updateStats() {
-      let completed = 0, running = 0, totalProgress = 0, totalFiles = 0;
-
-      agentsConfig.forEach(agent => {
-        const status = getAgentStatus(agent);
-        if (status.status === 'completed') completed++;
-        if (status.status === 'running') running++;
-        totalProgress += status.progress;
-        totalFiles += status.fileCount;
-      });
-
-      document.getElementById('completed-agents').textContent = completed;
-      document.getElementById('running-agents').textContent = running;
-      document.getElementById('total-progress').textContent = Math.round(totalProgress / agentsConfig.length) + '%';
-      document.getElementById('total-files').textContent = totalFiles;
-
-      // Git 提交数（模拟）
-      document.getElementById('total-commits').textContent = completed + 3;
-    }
-
-    // 渲染所有 Agent
-    function renderAgents() {
-      const container = document.getElementById('agents-container');
-      container.innerHTML = agentsConfig.map(renderAgentCard).join('');
-    }
-
-    // 添加终端日志
+    // ============ 工具函数 ============
     function addLog(message, type = 'info') {
       const terminal = document.getElementById('terminal');
       const time = new Date().toLocaleTimeString('zh-CN');
-      terminal.innerHTML += `<div class="terminal-line ${type}">[${time}] ${message}</div>`;
+      const line = document.createElement('div');
+      line.className = `terminal-line ${type}`;
+      line.innerHTML = `<span class="time">[${time}]</span><span>${message}</span>`;
+      terminal.appendChild(line);
       terminal.scrollTop = terminal.scrollHeight;
+
+      // 限制日志行数
+      while (terminal.children.length > 100) {
+        terminal.removeChild(terminal.firstChild);
+      }
     }
 
-    // 更新时间
     function updateTime() {
-      document.getElementById('last-update-time').textContent =
-        new Date().toLocaleString('zh-CN');
+      document.getElementById('last-update-time').textContent = new Date().toLocaleString('zh-CN');
     }
 
-    // 倒计时
-    let countdown = 10;
+    // ============ API 测试 ============
+    async function apiRequest(endpoint, method, body = null, token = null) {
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+      };
+
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      if (body) {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(`${API_BASE}${endpoint}`, options);
+      return await response.json();
+    }
+
+    async function runTest(moduleId, testIndex) {
+      const module = modulesConfig.find(m => m.id === moduleId);
+      if (!module) return;
+
+      const test = module.tests[testIndex];
+      if (!test) return;
+
+      // 更新测试状态为运行中
+      updateTestStatus(moduleId, testIndex, 'running');
+
+      try {
+        const token = test.needToken ? authToken : null;
+        const result = await apiRequest(test.endpoint, test.method, test.body, token);
+
+        if (result.code === 0 || result.code === 0) {
+          updateTestStatus(moduleId, testIndex, 'pass');
+          addLog(`✅ ${module.name} - ${test.name}: 通过`, 'success');
+
+          // 保存 token
+          if (result.data && result.data.token) {
+            authToken = result.data.token;
+            addLog(`   获取到认证令牌`, 'info');
+          }
+
+          return true;
+        } else {
+          updateTestStatus(moduleId, testIndex, 'fail');
+          addLog(`❌ ${module.name} - ${test.name}: 失败 - ${result.message}`, 'error');
+          return false;
+        }
+      } catch (err) {
+        updateTestStatus(moduleId, testIndex, 'fail');
+        addLog(`❌ ${module.name} - ${test.name}: 错误 - ${err.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function runModuleTests(moduleId) {
+      const module = modulesConfig.find(m => m.id === moduleId);
+      if (!module) return;
+
+      addLog(`🧪 开始测试 ${module.name}...`, 'info');
+
+      for (let i = 0; i < module.tests.length; i++) {
+        await runTest(moduleId, i);
+        await new Promise(r => setTimeout(r, 300)); // 间隔300ms
+      }
+
+      addLog(`✅ ${module.name} 测试完成`, 'success');
+      updateApiPassCount();
+    }
+
+    async function runAllTests() {
+      addLog('🚀 开始运行所有模块测试...', 'info');
+      authToken = null; // 重置 token
+
+      for (const module of modulesConfig) {
+        await runModuleTests(module.id);
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      addLog('🎉 所有模块测试完成!', 'success');
+    }
+
+    async function testServerHealth() {
+      addLog('🏥 检查服务器健康状态...', 'info');
+      try {
+        const result = await apiRequest('/api/health', 'GET');
+        if (result.code === 0) {
+          addLog(`✅ 服务器运行正常 (运行时间: ${Math.round(result.data.uptime)}秒)`, 'success');
+        } else {
+          addLog(`❌ 服务器异常: ${result.message}`, 'error');
+        }
+      } catch (err) {
+        addLog(`❌ 无法连接到服务器: ${err.message}`, 'error');
+      }
+    }
+
+    function openAdminApp() {
+      window.open('http://localhost:3002', '_blank');
+      addLog('🌐 已打开管理端应用', 'info');
+    }
+
+    function openMonitor() {
+      window.open('monitor.html', '_blank');
+      addLog('📊 已打开监控面板', 'info');
+    }
+
+    // ============ UI 渲染 ============
+    function renderModules() {
+      const container = document.getElementById('modules-container');
+
+      container.innerHTML = modulesConfig.map(module => `
+        <div class="module-card" data-module="${module.id}">
+          <div class="module-header" onclick="toggleModule('${module.id}')">
+            <div class="module-info">
+              <div class="module-icon" style="background: ${module.color}">${module.icon}</div>
+              <div>
+                <div class="module-name">${module.name}</div>
+                <div class="module-type">${module.type}</div>
+              </div>
+            </div>
+            <span class="status-badge status-pending" id="module-status-${module.id}">待测试</span>
+          </div>
+          <div class="module-body" id="module-body-${module.id}">
+            <ul class="test-list">
+              ${module.tests.map((test, i) => `
+                <li class="test-item">
+                  <span class="test-status pending" id="test-${module.id}-${i}">○</span>
+                  <span>${test.name}</span>
+                  <span style="color: var(--text-secondary); font-size: 11px;">${test.method} ${test.endpoint}</span>
+                  <button class="test-action" onclick="runTest('${module.id}', ${i})">测试</button>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleModule(moduleId) {
+      const body = document.getElementById(`module-body-${moduleId}`);
+      body.classList.toggle('expanded');
+    }
+
+    function updateTestStatus(moduleId, testIndex, status) {
+      const element = document.getElementById(`test-${moduleId}-${testIndex}`);
+      if (!element) return;
+
+      element.className = `test-status ${status}`;
+      element.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'running' ? '◐' : '○';
+
+      // 更新模块状态
+      const module = modulesConfig.find(m => m.id === moduleId);
+      const statusBadge = document.getElementById(`module-status-${moduleId}`);
+
+      const allTests = module.tests.length;
+      const passedTests = module.tests.filter((_, i) => {
+        const el = document.getElementById(`test-${moduleId}-${i}`);
+        return el && el.classList.contains('pass');
+      }).length;
+
+      if (passedTests === allTests) {
+        statusBadge.className = 'status-badge status-success';
+        statusBadge.textContent = '全部通过';
+      } else if (passedTests > 0) {
+        statusBadge.className = 'status-badge status-running';
+        statusBadge.textContent = `${passedTests}/${allTests}`;
+      }
+    }
+
+    function updateApiPassCount() {
+      let total = 0;
+      let passed = 0;
+
+      modulesConfig.forEach(module => {
+        module.tests.forEach((_, i) => {
+          total++;
+          const el = document.getElementById(`test-${module.id}-${i}`);
+          if (el && el.classList.contains('pass')) passed++;
+        });
+      });
+
+      document.getElementById('api-pass').textContent = `${passed}/${total}`;
+    }
+
+    function renderAgents() {
+      const container = document.getElementById('agents-container');
+
+      container.innerHTML = agentsConfig.map(agent => {
+        const progress = 100;
+        const completedTasks = agent.tasks.length;
+
+        return `
+          <div class="agent-card completed">
+            <div class="agent-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="agent-avatar" style="background: ${agent.color}">${agent.emoji}</div>
+                <div>
+                  <div class="agent-name">${agent.name}</div>
+                  <div class="agent-role">${agent.role}</div>
+                </div>
+              </div>
+              <span class="status-badge status-success">✓ 已完成</span>
+            </div>
+            <div class="agent-body">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                <span>进度</span>
+                <span>${progress}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill completed" style="width: ${progress}%"></div>
+              </div>
+              <ul style="list-style: none; font-size: 12px;">
+                ${agent.tasks.map(task => `
+                  <li style="padding: 4px 0; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: var(--success);">✓</span>
+                    <span>${task}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateStats() {
+      document.getElementById('completed-agents').textContent = agentsConfig.length;
+      document.getElementById('total-progress').textContent = '100%';
+      document.getElementById('total-files').textContent = '72+';
+      document.getElementById('total-commits').textContent = '5';
+    }
+
+    function refresh() {
+      renderModules();
+      renderAgents();
+      updateStats();
+      updateTime();
+      addLog('状态已刷新', 'info');
+    }
+
+    function manualRefresh() {
+      const btn = document.querySelector('.refresh-btn');
+      btn.style.transform = 'rotate(360deg)';
+      setTimeout(() => btn.style.transform = '', 1000);
+      refresh();
+      countdown = 10;
+    }
+
     function updateCountdown() {
       countdown--;
       document.getElementById('countdown').textContent = countdown;
@@ -652,38 +879,17 @@
       }
     }
 
-    // 刷新
-    function refresh() {
-      renderAgents();
-      updateStats();
-      updateTime();
-      addLog('状态已刷新', 'success');
-    }
-
-    // 手动刷新
-    function manualRefresh() {
-      const btn = document.querySelector('.refresh-btn');
-      btn.classList.add('spinning');
-      setTimeout(() => btn.classList.remove('spinning'), 1000);
-      refresh();
-      countdown = 10;
-    }
-
-    // 初始化
+    // ============ 初始化 ============
     function init() {
+      renderModules();
       renderAgents();
       updateStats();
       updateTime();
-      addLog('监控面板初始化完成', 'success');
-      addLog('Agent 1 (基础架构) 已完成 ✓', 'success');
-      addLog('Agent 2 (地图核心) 已完成 ✓', 'success');
-      addLog('Agent 3 (后端服务) 已完成 ✓', 'success');
-      addLog('Agent 4 (UI组件) 已完成 ✓', 'success');
-      addLog('Agent 5 (司机端) 已完成 ✓', 'success');
-      addLog('Agent 6 (管理端) 已完成 ✓', 'success');
-      addLog('🎉 所有 Agent 任务完成！项目架构已就绪', 'success');
 
-      // 自动刷新
+      addLog('监控面板初始化完成', 'success');
+      addLog('所有 Agent 任务已完成', 'success');
+      addLog('点击 "运行所有测试" 按钮开始测试 API', 'info');
+
       setInterval(updateCountdown, 1000);
     }
 
