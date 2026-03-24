@@ -9,6 +9,9 @@ import adminRoutes from './routes/admin'
 import { setupSocket } from './socket'
 import { initMockData } from './store'
 
+// 高德地图 REST API Key（Web服务类型）
+const AMAP_REST_KEY = process.env.AMAP_REST_KEY || '7bf10417175742fc23ec515c46599e8d'
+
 const app = express()
 const httpServer = createServer(app)
 
@@ -51,6 +54,39 @@ app.use('/api/auth', authRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/drivers', driverRoutes)
 app.use('/api/admin', adminRoutes)
+
+// 高德地图 REST API 代理（避免前端跨域，使用 JSONP）
+app.get('/api/amap/distance', async (req, res) => {
+  try {
+    const { origins, destination, type } = req.query
+    if (!origins || !destination) {
+      return res.status(400).json({ code: 1, message: 'Missing origins or destination' })
+    }
+    const resp = await fetch(
+      `https://restapi.amap.com/v3/distance?key=${AMAP_REST_KEY}&origins=${origins}&destination=${destination}&type=${type || '1'}&output=JSON`
+    )
+    const data = await resp.json()
+    res.json(data)
+  } catch (e: any) {
+    res.status(500).json({ code: 1, message: e.message })
+  }
+})
+
+app.get('/api/amap/direction/driving', async (req, res) => {
+  try {
+    const { origin, destination, strategy } = req.query
+    if (!origin || !destination) {
+      return res.status(400).json({ code: 1, message: 'Missing origin or destination' })
+    }
+    const resp = await fetch(
+      `https://restapi.amap.com/v3/direction/driving?key=${AMAP_REST_KEY}&origin=${origin}&destination=${destination}&strategy=${strategy || '0'}&extensions=all&output=JSON`
+    )
+    const data = await resp.json()
+    res.json(data)
+  } catch (e: any) {
+    res.status(500).json({ code: 1, message: e.message })
+  }
+})
 
 // 404 handler
 app.use((req, res) => {

@@ -161,35 +161,46 @@ export default function HomePage({ api }: HomePageProps) {
             lat: tip.location.getLat(),
           }))
 
-        // 计算每个搜索结果到参考点的驾车距离
+        // 先设置搜索结果（无距离），再异步计算距离
+        if (type === 'pickup') setPickupResults(results)
+        else setDestResults(results)
+
+        // 用 AMap.Driving 逐个计算搜索结果到参考点的驾车距离
         const refPoint = type === 'destination'
           ? (pickup || currentLocation)
           : currentLocation
-        if (refPoint && mapRef.current?.AMap) {
+        if (refPoint && results.length > 0 && mapRef.current?.AMap) {
           const AMap = mapRef.current.AMap
           AMap.plugin(['AMap.Driving'], () => {
-            const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
             results.forEach((item, idx) => {
+              const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
               driving.search(
-                [refPoint.lng, refPoint.lat],
-                [item.lng, item.lat],
+                new AMap.LngLat(refPoint.lng, refPoint.lat),
+                new AMap.LngLat(item.lng, item.lat),
                 (s: string, r: any) => {
                   if (s === 'complete' && r.routes?.length > 0) {
                     const d = r.routes[0].distance
                     const distStr = d >= 1000 ? `${(d / 1000).toFixed(1)}km` : `${Math.round(d)}m`
-                    const updated = [...results]
-                    updated[idx] = { ...updated[idx], distance: distStr }
-                    if (type === 'pickup') setPickupResults(updated)
-                    else setDestResults(updated)
+                    // 用函数式更新避免 stale closure
+                    if (type === 'pickup') {
+                      setPickupResults(prev => {
+                        const updated = [...prev]
+                        if (updated[idx]) updated[idx] = { ...updated[idx], distance: distStr }
+                        return updated
+                      })
+                    } else {
+                      setDestResults(prev => {
+                        const updated = [...prev]
+                        if (updated[idx]) updated[idx] = { ...updated[idx], distance: distStr }
+                        return updated
+                      })
+                    }
                   }
                 }
               )
             })
           })
         }
-
-        if (type === 'pickup') setPickupResults(results)
-        else setDestResults(results)
       } else {
         if (type === 'pickup') setPickupResults([])
         else setDestResults([])
@@ -396,16 +407,16 @@ export default function HomePage({ api }: HomePageProps) {
   // 预设距离缓存
   const [presetDistances, setPresetDistances] = useState<Record<string, string>>({})
 
-  // 计算当前位置到各预设目的地的距离
+  // 用高德 JS API AMap.Driving 逐个计算预设距离
   useEffect(() => {
     if (!currentLocation || !mapRef.current?.AMap) return
     const AMap = mapRef.current.AMap
     AMap.plugin(['AMap.Driving'], () => {
-      const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
       presetDestinations.forEach(dest => {
+        const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
         driving.search(
-          [currentLocation.lng, currentLocation.lat],
-          [dest.lng, dest.lat],
+          new AMap.LngLat(currentLocation.lng, currentLocation.lat),
+          new AMap.LngLat(dest.lng, dest.lat),
           (status: string, result: any) => {
             if (status === 'complete' && result.routes?.length > 0) {
               const route = result.routes[0]
