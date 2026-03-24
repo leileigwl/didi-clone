@@ -148,8 +148,11 @@ function createWindow() {
     if (mainWindow) mainWindow.show()
   })
 
-  // Development
-  if (process.env.NODE_ENV === 'development') {
+  // Development - use electron-vite's auto-injected URL
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.webContents.openDevTools()
+  } else if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools()
   } else {
