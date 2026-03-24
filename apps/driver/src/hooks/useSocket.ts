@@ -25,42 +25,19 @@ export function useSocket() {
     const socket = socketRef.current
 
     socket.on('connect', () => {
-      console.log('Socket connected:', socket.id)
+      console.log('✅ Socket connected:', socket.id)
     })
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected')
+      console.log('❌ Socket disconnected')
     })
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
+      console.error('❌ Socket connection error:', error)
     })
 
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
-  // Handle online/offline status - emit location to server
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-
-    if (isOnline) {
-      socket.connect()
-    } else {
-      socket.emit('driver:offline', { driverId: 'driver-1' })
-      socket.disconnect()
-    }
-  }, [isOnline])
-
-  // Listen for new orders (matches server's broadcastToNearbyDrivers)
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-
-    const handleNewOrder = (data: any) => {
-      console.log('New order received:', data)
+    socket.on('new:order', (data: any) => {
+      console.log('🎉 收到新订单:', data)
       const order: Order = {
         id: data.orderId,
         userId: '',
@@ -85,14 +62,25 @@ export function useSocket() {
           body: `${data.pickup.address} → ${data.destination.address} · ¥${data.price}${distText}`,
         })
       }
-    }
-
-    socket.on('new:order', handleNewOrder)
+    })
 
     return () => {
-      socket.off('new:order', handleNewOrder)
+      socket.disconnect()
     }
   }, [addPendingOrder])
+
+  // Handle online/offline status - emit location to server
+  useEffect(() => {
+    const socket = socketRef.current
+    if (!socket) return
+
+    if (isOnline) {
+      socket.connect()
+    } else {
+      socket.emit('driver:offline', { driverId: 'driver-1' })
+      socket.disconnect()
+    }
+  }, [isOnline])
 
   // Listen for order accepted confirmation
   useEffect(() => {

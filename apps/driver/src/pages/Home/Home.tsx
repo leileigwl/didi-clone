@@ -41,7 +41,17 @@ const Home: React.FC = () => {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
   const [currentAddress, setCurrentAddress] = useState('定位中...')
+  const [showLocationPicker, setShowLocationPicker] = useState(false) // 虚拟定位面板
   const mapRef = useRef<{ map: any; AMap: any } | null>(null)
+
+  // 预设测试位置
+  const presetLocations = [
+    { name: '义乌市中心', lng: 120.075, lat: 29.306 },
+    { name: '义乌站', lng: 120.0743, lat: 29.3063 },
+    { name: '国际商贸城', lng: 120.0965, lat: 29.3215 },
+    { name: '福田市场', lng: 120.0930, lat: 29.3180 },
+    { name: '绣湖广场', lng: 120.0685, lat: 29.3082 },
+  ]
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline
@@ -50,9 +60,41 @@ const Home: React.FC = () => {
 
     if (newStatus && driverLocation) {
       // 注册到服务器并开始上报位置
-      emitDriverOnline(driverLocation.lat, driverLocation.lng)
+      console.log('司机上线，位置:', driverLocation)
+      // 延迟一点确保 socket 已连接
+      setTimeout(() => {
+        emitDriverOnline(driverLocation.lat, driverLocation.lng)
+      }, 500)
     }
   }
+
+  // 虚拟定位 - 选择预设位置
+  const handleSelectPresetLocation = (loc: typeof presetLocations[0]) => {
+    const newPos = { lng: loc.lng, lat: loc.lat }
+    setDriverLocation(newPos)
+    setCurrentAddress(loc.name)
+    setShowLocationPicker(false)
+    if (mapRef.current) {
+      mapRef.current.map.setCenter([loc.lng, loc.lat])
+      mapRef.current.map.setZoom(16)
+    }
+    // 如果在线，更新服务器位置
+    if (isOnline) {
+      emitDriverOnline(loc.lat, loc.lng)
+    }
+  }
+
+  // 点击地图选择位置
+  const handleMapClick = useCallback((pos: Position) => {
+    if (showLocationPicker) {
+      setDriverLocation(pos)
+      setCurrentAddress(`自定义位置 (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`)
+      setShowLocationPicker(false)
+      if (isOnline) {
+        emitDriverOnline(pos.lat, pos.lng)
+      }
+    }
+  }, [showLocationPicker, isOnline, emitDriverOnline])
 
   const handleAcceptOrder = (orderId: string) => {
     socketAcceptOrder(orderId)
@@ -326,6 +368,8 @@ const Home: React.FC = () => {
           center={driverLocation}
           zoom={16}
           theme="normal"
+          enableClick={showLocationPicker}
+          onMapClick={handleMapClick}
           onMapReady={handleMapReady}
         >
           {/* 司机位置 - 📍图标 */}
@@ -369,6 +413,37 @@ const Home: React.FC = () => {
             <span>{isOnline ? '在线接单' : '离线休息'}</span>
           </button>
         </div>
+
+        {/* 虚拟定位按钮 (测试用) */}
+        <button
+          className="virtual-location-btn"
+          onClick={() => setShowLocationPicker(!showLocationPicker)}
+        >
+          📍
+        </button>
+
+        {/* 虚拟定位选择面板 */}
+        {showLocationPicker && (
+          <div className="location-picker-panel">
+            <div className="location-picker-header">
+              <span>选择测试位置</span>
+              <button onClick={() => setShowLocationPicker(false)}>✕</button>
+            </div>
+            <div className="location-picker-list">
+              {presetLocations.map(loc => (
+                <button
+                  key={loc.name}
+                  className={`location-picker-item ${driverLocation.lng === loc.lng && driverLocation.lat === loc.lat ? 'active' : ''}`}
+                  onClick={() => handleSelectPresetLocation(loc)}
+                >
+                  <span className="loc-icon">📍</span>
+                  <span className="loc-name">{loc.name}</span>
+                </button>
+              ))}
+            </div>
+            <p className="location-picker-hint">点击选择或点击地图自定义</p>
+          </div>
+        )}
 
         {/* 回到我的位置按钮 */}
         <button

@@ -180,6 +180,9 @@ export function broadcastToNearbyDrivers(
     duration: number
   }
 ) {
+  console.log(`📢 广播订单 ${orderId} 到附近司机，上车点: (${pickup.lat}, ${pickup.lng})`)
+  console.log(`   当前在线司机数量: ${driverSockets.size}`)
+
   // 先用直线距离快速筛选 5km 内的司机
   const nearbySockets: Array<{ socketId: string; driverId: string; lat: number; lng: number }> = []
   for (const [socketId, driverInfo] of driverSockets.entries()) {
@@ -187,12 +190,18 @@ export function broadcastToNearbyDrivers(
       pickup.lat, pickup.lng,
       driverInfo.lat, driverInfo.lng
     )
+    console.log(`   司机 ${driverInfo.driverId} 距离: ${distance.toFixed(2)}km, 位置: (${driverInfo.lat}, ${driverInfo.lng})`)
     if (distance <= 5) {
       nearbySockets.push({ socketId, ...driverInfo })
     }
   }
 
-  if (nearbySockets.length === 0) return
+  if (nearbySockets.length === 0) {
+    console.log(`❌ 没有找到5km内的司机`)
+    return
+  }
+
+  console.log(`✅ 找到 ${nearbySockets.length} 个附近司机`)
 
   // 用高德 REST API 获取真实驾车距离
   const origins = nearbySockets.map(d => ({ lat: d.lat, lng: d.lng }))
@@ -206,7 +215,7 @@ export function broadcastToNearbyDrivers(
         durationFromDriver: Math.round(result.duration),
         timestamp: new Date().toISOString()
       })
-      console.log(`Notified driver ${driverInfo.driverId} (驾车距离: ${result.distance.toFixed(1)}km) about new order ${orderId}`)
+      console.log(`✅ 已推送给司机 ${driverInfo.driverId} (驾车距离: ${result.distance.toFixed(1)}km)`)
     })
   })
 }
