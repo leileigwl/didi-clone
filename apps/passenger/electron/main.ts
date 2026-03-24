@@ -14,7 +14,8 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false // 允许加载外部脚本（高德地图）
     },
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#FF6B00',
