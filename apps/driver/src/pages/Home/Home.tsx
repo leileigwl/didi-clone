@@ -324,7 +324,7 @@ const Home: React.FC = () => {
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
           center={driverLocation}
-          zoom={14}
+          zoom={16}
           theme="normal"
           onMapReady={handleMapReady}
         >
