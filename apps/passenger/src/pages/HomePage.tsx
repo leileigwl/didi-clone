@@ -141,12 +141,36 @@ export default function HomePage({ api }: HomePageProps) {
       return false
     }
 
-    tryCoreLocation().then((ok) => {
-      if (!ok) {
-        // 回退到 AMap 定位
-        getCurrentLocation(map, AMap)
-      }
-    })
+    // 依次尝试：CoreLocation → HTML5 → AMap Geolocation → CitySearch(IP)
+    const tryHTML5 = (): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) { resolve(false); return }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const p: Position = {
+              lng: pos.coords.longitude,
+              lat: pos.coords.latitude,
+              address: ''
+            }
+            setCurrentLocation(p)
+            map.setCenter([p.lng, p.lat])
+            map.setZoom(18)
+            reverseGeocode(p, AMap)
+            console.log('HTML5定位成功:', `(${p.lng.toFixed(4)}, ${p.lat.toFixed(4)})`, `精度: ${pos.coords.accuracy.toFixed(0)}m`)
+            resolve(true)
+          },
+          (err) => {
+            console.warn('HTML5定位失败:', err.message, `(code: ${err.code})`)
+            resolve(false)
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        )
+      })
+    }
+
+    tryCoreLocation()
+      .then((ok) => { if (!ok) return tryHTML5() })
+      .then((ok) => { if (!ok) getCurrentLocation(map, AMap) })
   }, [reverseGeocode])
 
   // 搜索地点（防抖）
@@ -482,20 +506,21 @@ export default function HomePage({ api }: HomePageProps) {
           zoom={18}
           onMapReady={handleMapReady}
         >
-          {/* 我的位置（始终显示） */}
+          {/* 我的位置（始终显示，蓝色水滴） */}
           {currentLocation && (
             <MapMarker
               position={currentLocation}
-              type="origin"
+              type="passenger"
               label="我的位置"
+              zIndex={200}
             />
           )}
 
-          {/* 上车点 */}
+          {/* 上车点（绿色圆点） */}
           {pickup && currentLocation && pickup.lng !== currentLocation.lng && pickup.lat !== currentLocation.lat && (
             <MapMarker
               position={pickup}
-              type="destination"
+              type="origin"
               label="上车点"
             />
           )}
