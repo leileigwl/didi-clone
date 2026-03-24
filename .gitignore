@@ -1,4 +1,5 @@
 node_modules
 apps/driver/out/
 apps/passenger/out/
+server/dist/
 .gstack/
