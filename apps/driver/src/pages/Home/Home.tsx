@@ -173,6 +173,7 @@ const Home: React.FC = () => {
             reverseGeocode(lng, lat, AMap)
           }
           console.log('定位成功:', result.formattedAddress, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, 'type:', result.location_type)
+          if (map) updateRangeCircle(lng, lat, AMap, map)
         } else {
           console.warn('高德定位失败，使用CitySearch作为后备:', status)
           locateWithIPApi(AMap, map)
@@ -186,6 +187,26 @@ const Home: React.FC = () => {
       }
     })
   }, [isOnline, reverseGeocode, locateWithIPApi])
+
+  const circleRef = useRef<any>(null)
+
+  // 添加/更新5km范围圈
+  const updateRangeCircle = useCallback((lng: number, lat: number, AMap: any, map: any) => {
+    if (circleRef.current) {
+      map.remove(circleRef.current)
+    }
+    circleRef.current = new AMap.Circle({
+      center: [lng, lat],
+      radius: 5000, // 5km
+      strokeColor: '#FF6B00',
+      strokeOpacity: 0.3,
+      strokeWeight: 2,
+      fillColor: '#FF6B00',
+      fillOpacity: 0.05,
+      strokeStyle: 'dashed',
+    })
+    map.add(circleRef.current)
+  }, [])
 
   // 地图加载完成后定位
   const handleMapReady = useCallback((map: any, AMap: any) => {
@@ -202,6 +223,7 @@ const Home: React.FC = () => {
           setLocationDenied(false)
           map.setCenter([lng, lat])
           map.setZoom(16)
+          updateRangeCircle(lng, lat, AMap, map)
           reverseGeocode(lng, lat, AMap)
           return true
         } else if (result.error === 'denied') {
@@ -228,6 +250,7 @@ const Home: React.FC = () => {
             setLocationDenied(false)
             map.setCenter([lng, lat])
             map.setZoom(16)
+            updateRangeCircle(lng, lat, AMap, map)
             reverseGeocode(lng, lat, AMap)
             resolve(true)
           },
@@ -246,12 +269,16 @@ const Home: React.FC = () => {
       .then((ok) => { if (!ok) locateWithAmap(AMap, map) })
   }, [locateWithAmap, reverseGeocode])
 
-  // 位置变化时上报给服务器（跳过默认位置，避免上报未定位时的坐标）
+  // 位置变化时上报给服务器 + 更新范围圈
   useEffect(() => {
     if (isOnline && driverLocation.lat !== DEFAULT_YIWU.lat) {
       emitLocation(driverLocation.lat, driverLocation.lng)
     }
-  }, [driverLocation, isOnline, emitLocation])
+    // 更新范围圈
+    if (mapRef.current && driverLocation.lat !== DEFAULT_YIWU.lat) {
+      updateRangeCircle(driverLocation.lng, driverLocation.lat, mapRef.current.AMap, mapRef.current.map)
+    }
+  }, [driverLocation, isOnline, emitLocation, updateRangeCircle])
 
   // 请求macOS定位权限
   useEffect(() => {
