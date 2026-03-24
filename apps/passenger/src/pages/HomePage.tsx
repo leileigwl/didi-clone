@@ -399,6 +399,17 @@ export default function HomePage({ api }: HomePageProps) {
       return
     }
 
+    // 确保 api 有 token
+    const token = localStorage.getItem('passenger_token')
+    if (token && !api.getToken()) {
+      api.setToken(token)
+    }
+
+    if (!api.getToken()) {
+      setError('请先登录')
+      return
+    }
+
     setLoading(true)
     setError(null)
 

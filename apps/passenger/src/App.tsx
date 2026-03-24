@@ -46,8 +46,10 @@ function App() {
         const res = await api.verifyCode('13800138000', '123456')
         if (res.code === 0 && res.data.token) {
           localStorage.setItem('passenger_token', res.data.token)
+          // verifyCode 已经自动设置了 token，但为了保险再设置一次
+          api.setToken(res.data.token)
           setUser(res.data.user)
-          console.log('自动登录成功:', res.data.user)
+          console.log('自动登录成功:', res.data.user, 'token:', res.data.token.substring(0, 20) + '...')
         }
       } catch (e) {
         console.error('自动登录失败:', e)
