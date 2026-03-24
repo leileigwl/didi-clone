@@ -13,6 +13,10 @@ interface HomePageProps {
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
 const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || ''
 
+// Debug: 输出 key 状态（不输出完整 key）
+console.log('Amap Key loaded:', AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED')
+console.log('Security Code loaded:', AMAP_SECURITY_CODE ? 'YES' : 'NO')
+
 export default function HomePage({ api }: HomePageProps) {
   const navigate = useNavigate()
   const {

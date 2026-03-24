@@ -10,6 +10,10 @@ import './Home.css'
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
 const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || ''
 
+// Debug: 输出 key 状态（不输出完整 key）
+console.log('Driver Amap Key loaded:', AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED')
+console.log('Driver Security Code loaded:', AMAP_SECURITY_CODE ? 'YES' : 'NO')
+
 const Home: React.FC = () => {
   const navigate = useNavigate()
   const {
