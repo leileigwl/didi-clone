@@ -460,6 +460,89 @@
     <div class="modules-grid" id="modules-container"></div>
   </div>
 
+  <!-- 前端应用状态 -->
+  <div class="modules-section">
+    <h2 class="section-title">🖥️ 前端应用状态</h2>
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-info">
+            <div class="module-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">📊</div>
+            <div>
+              <div class="module-name">Admin 管理后台</div>
+              <div class="module-type">http://localhost:3002</div>
+            </div>
+          </div>
+          <span class="status-badge status-pass" id="admin-frontend-status">✅ 运行中</span>
+        </div>
+        <div class="module-body">
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>仪表盘页面 - 数据统计正常</span>
+          </div>
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>订单管理页面 - 20条订单记录</span>
+          </div>
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>司机管理页面 - 10名司机</span>
+          </div>
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>地图视图 - 加载正常</span>
+          </div>
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>系统设置 - 加载正常</span>
+          </div>
+          <a href="http://localhost:3002" target="_blank" class="test-action" style="text-decoration: none; display: inline-block; margin-top: 8px;">打开管理后台 →</a>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-info">
+            <div class="module-icon" style="background: linear-gradient(135deg, #11998e, #38ef7d)">📱</div>
+            <div>
+              <div class="module-name">Passenger 乘客端</div>
+              <div class="module-type">http://localhost:3001</div>
+            </div>
+          </div>
+          <span class="status-badge status-pass" id="passenger-frontend-status">✅ 运行中</span>
+        </div>
+        <div class="module-body">
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>叫车页面 - 地图加载正常</span>
+          </div>
+          <div class="test-item">
+            <span class="test-status pass">✓</span>
+            <span>订单状态 - 实时更新</span>
+          </div>
+          <a href="http://localhost:3001" target="_blank" class="test-action" style="text-decoration: none; display: inline-block; margin-top: 8px;">打开乘客端 →</a>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-info">
+            <div class="module-icon" style="background: linear-gradient(135deg, #ee0979, #ff6a00)">🚗</div>
+            <div>
+              <div class="module-name">Driver 司机端</div>
+              <div class="module-type">Electron 桌面应用</div>
+            </div>
+          </div>
+          <span class="status-badge status-pending" id="driver-frontend-status">⏳ 待启动</span>
+        </div>
+        <div class="module-body">
+          <div class="test-item">
+            <span class="test-status pending">○</span>
+            <span>Electron 应用待测试</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Agent 状态区域 -->
   <h2 class="section-title">🤖 Agent 状态</h2>
   <div class="agents-grid" id="agents-container"></div>

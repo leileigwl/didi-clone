@@ -1,11 +1,10 @@
-import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron'
-import { join } from 'path'
+const { Tray, Menu, nativeImage, BrowserWindow, app } = require('electron')
+const { join } = require('path')
 
-let tray: Tray | null = null
+let tray = null
 
 // Create tray icon based on status
-function createTrayIcon(isOnline: boolean): nativeImage {
-  // Create a simple colored circle as tray icon
+function createTrayIcon(isOnline) {
   const size = 22
   const canvas = `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
@@ -18,7 +17,7 @@ function createTrayIcon(isOnline: boolean): nativeImage {
   return nativeImage.createFromBuffer(Buffer.from(canvas))
 }
 
-export function createTray(mainWindow: BrowserWindow): void {
+function createTray(mainWindow) {
   const icon = createTrayIcon(false)
   tray = new Tray(icon)
   tray.setToolTip('Didi Driver - Offline')
@@ -27,23 +26,27 @@ export function createTray(mainWindow: BrowserWindow): void {
     {
       label: 'Show App',
       click: () => {
-        mainWindow.show()
-        mainWindow.focus()
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
       }
     },
     {
       label: 'Go Online',
       id: 'toggle-online',
       click: () => {
-        mainWindow.show()
-        mainWindow.webContents.send('tray-toggle-online')
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.webContents.send('tray-toggle-online')
+        }
       }
     },
     { type: 'separator' },
     {
       label: 'Quit',
       click: () => {
-        mainWindow.destroy()
+        if (mainWindow) mainWindow.destroy()
         app.quit()
       }
     }
@@ -52,16 +55,20 @@ export function createTray(mainWindow: BrowserWindow): void {
   tray.setContextMenu(contextMenu)
 
   tray.on('double-click', () => {
-    mainWindow.show()
-    mainWindow.focus()
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+    }
   })
 
   tray.on('click', () => {
-    mainWindow.webContents.send('tray-click')
+    if (mainWindow) {
+      mainWindow.webContents.send('tray-click')
+    }
   })
 }
 
-export function updateTrayStatus(isOnline: boolean, orderCount: number): void {
+function updateTrayStatus(isOnline, orderCount) {
   if (!tray) return
 
   const icon = createTrayIcon(isOnline)
@@ -113,9 +120,15 @@ export function updateTrayStatus(isOnline: boolean, orderCount: number): void {
   tray.setContextMenu(contextMenu)
 }
 
-export function destroyTray(): void {
+function destroyTray() {
   if (tray) {
     tray.destroy()
     tray = null
   }
+}
+
+module.exports = {
+  createTray,
+  updateTrayStatus,
+  destroyTray
 }
