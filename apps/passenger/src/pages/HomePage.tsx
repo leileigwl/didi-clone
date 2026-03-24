@@ -142,6 +142,12 @@ export default function HomePage({ api }: HomePageProps) {
 
   return (
     <div className="home-page">
+      {/* 调试信息 */}
+      <div style={{ padding: '10px', background: '#e8f5e9', color: '#333', fontSize: '12px' }}>
+        <div>AMAP_KEY: {AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED'}</div>
+        <div>AMAP_SECURITY: {AMAP_SECURITY_CODE ? 'YES' : 'NO'}</div>
+      </div>
+
       {/* 地图区域 */}
       <div className="map-container">
         <MapView

@@ -92,6 +92,12 @@ const Home: React.FC = () => {
     <div className="home-container">
       <StatusBar />
 
+      {/* 调试信息 */}
+      <div style={{ padding: '10px', background: '#2d2d44', color: '#fff', fontSize: '12px' }}>
+        <div>AMAP_KEY: {AMAP_KEY ? `${AMAP_KEY.substring(0, 8)}...` : 'NOT LOADED'}</div>
+        <div>AMAP_SECURITY: {AMAP_SECURITY_CODE ? 'YES' : 'NO'}</div>
+      </div>
+
       {/* 地图区域 */}
       <div className="map-section">
         <MapView
