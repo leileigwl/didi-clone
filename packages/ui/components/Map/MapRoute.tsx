@@ -42,68 +42,71 @@ const MapRoute: React.FC<MapRouteProps> = ({
 
     setIsLoading(true);
 
-    // 创建驾车规划实例
-    drivingRef.current = new (AMap as any).Driving({
-      policy: (AMap as any).DrivingPolicy.LEAST_TIME, // 最快路线
-      hideMarkers: true, // 隐藏起终点标记
-      isOutline: true,
-      outlineColor: 'white',
-      autoFitView: true,
-    });
+    // 加载驾车规划插件
+    (AMap as any).plugin(['AMap.Driving'], () => {
+      // 创建驾车规划实例
+      drivingRef.current = new (AMap as any).Driving({
+        policy: (AMap as any).DrivingPolicy.LEAST_TIME, // 最快路线
+        hideMarkers: true, // 隐藏起终点标记
+        isOutline: true,
+        outlineColor: 'white',
+        autoFitView: true,
+      });
 
-    // 规划路线
-    drivingRef.current.search(
-      [origin.lng, origin.lat],
-      [destination.lng, destination.lat],
-      (status: string, result: any) => {
-        setIsLoading(false);
+      // 规划路线
+      drivingRef.current.search(
+        [origin.lng, origin.lat],
+        [destination.lng, destination.lat],
+        (status: string, result: any) => {
+          setIsLoading(false);
 
-        if (status === 'complete' && result.routes && result.routes.length > 0) {
-          const route = result.routes[0];
-          const path: Position[] = [];
+          if (status === 'complete' && result.routes && result.routes.length > 0) {
+            const route = result.routes[0];
+            const path: Position[] = [];
 
-          // 提取路径点
-          route.steps.forEach((step: any) => {
-            step.path.forEach((point: any) => {
-              path.push({
-                lng: point.lng,
-                lat: point.lat,
+            // 提取路径点
+            route.steps.forEach((step: any) => {
+              step.path.forEach((point: any) => {
+                path.push({
+                  lng: point.lng,
+                  lat: point.lat,
+                });
               });
             });
-          });
 
-          // 创建折线
-          const pathArray = path.map((p) => [p.lng, p.lat]);
-          polylineRef.current = new (AMap as any).Polyline({
-            path: pathArray,
-            strokeColor: color,
-            strokeWeight: lineWidth,
-            strokeOpacity: 1,
-            lineJoin: 'round',
-            lineCap: 'round',
-            zIndex: 50,
-            showDir: true, // 显示方向箭头
-          });
+            // 创建折线
+            const pathArray = path.map((p) => [p.lng, p.lat]);
+            polylineRef.current = new (AMap as any).Polyline({
+              path: pathArray,
+              strokeColor: color,
+              strokeWeight: lineWidth,
+              strokeOpacity: 1,
+              lineJoin: 'round',
+              lineCap: 'round',
+              zIndex: 50,
+              showDir: true, // 显示方向箭头
+            });
 
-          map.add(polylineRef.current);
-          map.setFitView([polylineRef.current]);
+            map.add(polylineRef.current);
+            map.setFitView([polylineRef.current]);
 
-          // 保存路线信息
-          const info: RouteInfo = {
-            distance: route.distance,
-            duration: route.time,
-            path,
-          };
-          setRouteInfo(info);
+            // 保存路线信息
+            const info: RouteInfo = {
+              distance: route.distance,
+              duration: route.time,
+              path,
+            };
+            setRouteInfo(info);
 
-          if (onRouteComplete) {
-            onRouteComplete(info);
+            if (onRouteComplete) {
+              onRouteComplete(info);
+            }
+          } else {
+            console.error('路线规划失败:', result);
           }
-        } else {
-          console.error('路线规划失败:', result);
         }
-      }
-    );
+      );
+    }); // end AMap.plugin callback
 
     return () => {
       if (polylineRef.current && map) {

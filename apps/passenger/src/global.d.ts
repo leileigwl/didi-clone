@@ -8,6 +8,7 @@ declare global {
       platform: string
       requestLocationPermission: () => Promise<{ granted: boolean; status: string }>
       openLocationSettings: () => Promise<boolean>
+      getNativeLocation: () => Promise<{ lat: number; lng: number; accuracy: number } | { error: string }>
     }
   }
 }

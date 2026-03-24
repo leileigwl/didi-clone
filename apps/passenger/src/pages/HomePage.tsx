@@ -78,6 +78,19 @@ export default function HomePage({ api }: HomePageProps) {
     }
   }, [routeInfo])
 
+  // 逆地理编码
+  const reverseGeocode = useCallback((pos: Position, AMap: any) => {
+    AMap.plugin(['AMap.Geocoder'], () => {
+      const geocoder = new AMap.Geocoder()
+      geocoder.getAddress([pos.lng, pos.lat], (status: string, result: any) => {
+        if (status === 'complete' && result.regeocode) {
+          const address = result.regeocode.formattedAddress
+          setCurrentLocation(prev => prev ? { ...prev, address } : { ...pos, address })
+        }
+      })
+    })
+  }, [])
+
   // 地图加载完成 - 初始化定位和搜索
   const handleMapReady = useCallback((map: any, AMap: any) => {
     mapRef.current = { map, AMap }
@@ -94,9 +107,39 @@ export default function HomePage({ api }: HomePageProps) {
       autoCompleteRef.current = autoComplete
     })
 
-    // 自动获取当前位置
-    getCurrentLocation(map, AMap)
-  }, [])
+    // 优先使用 CoreLocation 获取真实位置
+    const tryCoreLocation = async (): Promise<boolean> => {
+      if (!window.passengerAPI?.getNativeLocation) return false
+      try {
+        const result = await window.passengerAPI.getNativeLocation()
+        if ('lat' in result && 'lng' in result) {
+          const pos: Position = {
+            lng: result.lng,
+            lat: result.lat,
+            address: ''
+          }
+          setCurrentLocation(pos)
+          map.setCenter([pos.lng, pos.lat])
+          map.setZoom(16)
+          reverseGeocode(pos, AMap)
+          console.log('CoreLocation定位成功:', `(${pos.lng.toFixed(4)}, ${pos.lat.toFixed(4)})`)
+          return true
+        } else {
+          console.warn('CoreLocation不可用:', result.error)
+        }
+      } catch (e) {
+        console.warn('CoreLocation调用失败:', e)
+      }
+      return false
+    }
+
+    tryCoreLocation().then((ok) => {
+      if (!ok) {
+        // 回退到 AMap 定位
+        getCurrentLocation(map, AMap)
+      }
+    })
+  }, [reverseGeocode])
 
   // 搜索地点（防抖）
   const doSearch = useCallback((keyword: string, type: 'pickup' | 'destination') => {
@@ -242,19 +285,6 @@ export default function HomePage({ api }: HomePageProps) {
         } else {
           console.warn('CitySearch定位失败，使用义乌默认位置')
           setCurrentLocation(DEFAULT_YIWU)
-        }
-      })
-    })
-  }, [])
-
-  // 逆地理编码
-  const reverseGeocode = useCallback((pos: Position, AMap: any) => {
-    AMap.plugin(['AMap.Geocoder'], () => {
-      const geocoder = new AMap.Geocoder()
-      geocoder.getAddress([pos.lng, pos.lat], (status: string, result: any) => {
-        if (status === 'complete' && result.regeocode) {
-          const address = result.regeocode.formattedAddress
-          setCurrentLocation(prev => prev ? { ...prev, address } : { ...pos, address })
         }
       })
     })

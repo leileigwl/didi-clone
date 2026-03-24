@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
+import { execFile } from 'child_process'
+app.commandLine.appendSwitch('remote-debugging-port', '9223')
 
 let mainWindow: BrowserWindow | null = null
 
@@ -96,6 +98,32 @@ app.whenReady().then(() => {
       await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
     }
     return true
+  })
+
+  // 通过 macOS CoreLocation 获取真实位置
+  ipcMain.handle('passenger:get-native-location', () => {
+    return new Promise((resolve) => {
+      if (process.platform !== 'darwin') {
+        resolve({ error: 'not_macos' })
+        return
+      }
+      const binPath = join(__dirname, '../bin/get-location')
+      execFile(binPath, { timeout: 15000 }, (error, stdout) => {
+        if (error) {
+          if (stdout) {
+            try { resolve(JSON.parse(stdout.trim())) } catch { resolve({ error: 'parse_error' }) }
+          } else {
+            resolve({ error: error.message })
+          }
+          return
+        }
+        try {
+          resolve(JSON.parse(stdout.trim()))
+        } catch {
+          resolve({ error: 'parse_error' })
+        }
+      })
+    })
   })
 
   app.on('activate', () => {

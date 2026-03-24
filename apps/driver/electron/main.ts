@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } = require('electron')
 const { join } = require('path')
+app.commandLine.appendSwitch('remote-debugging-port', '9222')
 const { execFile } = require('child_process')
 
 let mainWindow = null
