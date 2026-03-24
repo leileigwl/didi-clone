@@ -62,8 +62,8 @@ router.post('/', (req, res) => {
       duration: order.duration,
     })
 
-    // Auto-accept simulation for demo
-    simulateOrderFlow(io, order.id)
+    // 不再自动接单，让司机手动抢单
+    // simulateOrderFlow(io, order.id)
   }
 
   res.status(201).json(success(order, 'Order created successfully'))
