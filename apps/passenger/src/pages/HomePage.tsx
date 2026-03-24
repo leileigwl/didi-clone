@@ -98,12 +98,12 @@ export default function HomePage({ api }: HomePageProps) {
     setAmapInstance(AMap)
     setMapReady(true)
 
-    // 初始化 AutoComplete 插件
+    // 初始化 AutoComplete 插件（搜所有类型：POI、地址、道路、小区等）
     AMap.plugin(['AMap.AutoComplete'], () => {
       const autoComplete = new AMap.AutoComplete({
         city: '全国',
-        datatype: 'poi',
-        input: null, // 不绑定到具体 input，手动触发
+        datatype: 'all',
+        input: null,
       })
       autoCompleteRef.current = autoComplete
     })
@@ -156,7 +156,7 @@ export default function HomePage({ api }: HomePageProps) {
           .filter((tip: any) => tip.location)
           .map((tip: any) => ({
             name: tip.name,
-            address: tip.district || '',
+            address: [tip.district, tip.address].filter(Boolean).join(''),
             lng: tip.location.getLng(),
             lat: tip.location.getLat(),
           }))
@@ -236,7 +236,7 @@ export default function HomePage({ api }: HomePageProps) {
 
   // 选择搜索结果
   const handlePickupSelect = useCallback((result: SearchResult) => {
-    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address + result.name }
+    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address ? `${result.address}${result.name}` : result.name }
     setPickup(pos)
     setPickupKeyword(result.name)
     setPickupResults([])
@@ -247,7 +247,7 @@ export default function HomePage({ api }: HomePageProps) {
   }, [setPickup])
 
   const handleDestSelect = useCallback((result: SearchResult) => {
-    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address + result.name }
+    const pos: Position = { lng: result.lng, lat: result.lat, address: result.address ? `${result.address}${result.name}` : result.name }
     setDestination(pos)
     setDestKeyword(result.name)
     setDestResults([])
