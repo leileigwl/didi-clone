@@ -1,9 +1,10 @@
 .order-card {
-  background: #2d2d44;
+  background: #FFFFFF;
   border-radius: 16px;
   padding: 20px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* Countdown Bar */
@@ -13,12 +14,12 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: #4d4d64;
+  background: #E8E8E8;
 }
 
 .countdown-progress {
   height: 100%;
-  background: linear-gradient(90deg, #7AC9A8, #E8A45C);
+  background: linear-gradient(90deg, #FF6B00, #e55d00);
   transition: width 1s linear;
 }
 
@@ -38,12 +39,12 @@
 .order-price {
   font-size: 28px;
   font-weight: 700;
-  color: #7AC9A8;
+  color: #FF6B00;
 }
 
 .order-distance {
   font-size: 12px;
-  color: #888;
+  color: #666666;
   margin-top: 4px;
 }
 
@@ -56,12 +57,12 @@
 .order-duration {
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: #333333;
 }
 
 .order-label {
   font-size: 12px;
-  color: #888;
+  color: #666666;
 }
 
 /* Route Info */
@@ -84,11 +85,11 @@
 }
 
 .point-marker.pickup {
-  background: #E8A45C;
+  background: #FF6B00;
 }
 
 .point-marker.destination {
-  background: #7AC9A8;
+  background: #52C41A;
 }
 
 .point-details {
@@ -99,14 +100,14 @@
 
 .point-label {
   font-size: 11px;
-  color: #888;
+  color: #666666;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .point-address {
   font-size: 14px;
-  color: #fff;
+  color: #333333;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -116,7 +117,7 @@
 .route-line {
   width: 2px;
   height: 24px;
-  background: linear-gradient(to bottom, #E8A45C, #7AC9A8);
+  background: linear-gradient(to bottom, #FF6B00, #52C41A);
   margin-left: 5px;
   margin-top: 4px;
   margin-bottom: 4px;
@@ -128,7 +129,7 @@
   gap: 12px;
   margin-bottom: 16px;
   padding-top: 12px;
-  border-top: 1px solid #4d4d64;
+  border-top: 1px solid #E8E8E8;
 }
 
 .detail-badge {
@@ -136,15 +137,15 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #1a1a2e;
+  background: #f5f5f5;
   border-radius: 8px;
   font-size: 13px;
-  color: #fff;
+  color: #333333;
 }
 
 .detail-badge.earnings {
-  background: rgba(122, 201, 168, 0.2);
-  color: #7AC9A8;
+  background: rgba(255, 107, 0, 0.1);
+  color: #FF6B00;
   font-weight: 600;
 }
 
@@ -172,20 +173,20 @@
 
 .reject-btn {
   background: transparent;
-  border: 2px solid #e74c3c;
-  color: #e74c3c;
+  border: 2px solid #FF4D4F;
+  color: #FF4D4F;
 }
 
 .reject-btn:hover {
-  background: rgba(231, 76, 60, 0.1);
+  background: rgba(255, 77, 79, 0.06);
 }
 
 .accept-btn {
-  background: #7AC9A8;
-  color: #1a1a2e;
+  background: #FF6B00;
+  color: #FFFFFF;
 }
 
 .accept-btn:hover {
-  background: #6ab897;
+  background: #e55d00;
   transform: translateY(-2px);
 }

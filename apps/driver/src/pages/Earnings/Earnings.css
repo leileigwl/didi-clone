@@ -1,7 +1,7 @@
 .earnings-container {
   min-height: 100vh;
-  background: #1a1a2e;
-  color: #ffffff;
+  background: #f5f5f5;
+  color: #333333;
   padding-bottom: 40px;
 }
 
@@ -11,10 +11,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: #2d2d44;
+  background: #FFFFFF;
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .earnings-header h1 {
@@ -29,7 +30,7 @@
 .back-btn {
   background: none;
   border: none;
-  color: #E8A45C;
+  color: #FF6B00;
   font-size: 24px;
   cursor: pointer;
   padding: 8px;
@@ -45,23 +46,24 @@
 .filter-btn {
   flex: 1;
   padding: 12px;
-  background: #2d2d44;
+  background: #FFFFFF;
   border: none;
   border-radius: 8px;
-  color: #888;
+  color: #666666;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .filter-btn.active {
-  background: #E8A45C;
-  color: #1a1a2e;
+  background: #FF6B00;
+  color: #FFFFFF;
   font-weight: 600;
 }
 
 .filter-btn:hover:not(.active) {
-  background: #3d3d54;
+  background: #f0f0f0;
 }
 
 /* Earnings Summary */
@@ -70,7 +72,7 @@
 }
 
 .summary-card {
-  background: linear-gradient(135deg, #7AC9A8 0%, #5BA887 100%);
+  background: linear-gradient(135deg, #FF6B00 0%, #e55d00 100%);
   border-radius: 16px;
   padding: 24px;
   text-align: center;
@@ -78,7 +80,7 @@
 
 .summary-label {
   font-size: 14px;
-  color: rgba(26, 26, 46, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 8px;
 }
 
@@ -90,14 +92,14 @@
 
 .summary-amount .currency {
   font-size: 24px;
-  color: #1a1a2e;
+  color: #FFFFFF;
   margin-right: 4px;
 }
 
 .summary-amount .amount {
   font-size: 48px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #FFFFFF;
 }
 
 /* Stats Grid */
@@ -109,12 +111,13 @@
 }
 
 .stat-card {
-  background: #2d2d44;
+  background: #FFFFFF;
   border-radius: 12px;
   padding: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card .stat-icon {
@@ -129,12 +132,12 @@
 .stat-value {
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: #333333;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #888;
+  color: #666666;
 }
 
 /* Order History Section */
@@ -145,7 +148,7 @@
 .order-history-section h2 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #E8A45C;
+  color: #FF6B00;
 }
 
 /* Empty State */
@@ -155,7 +158,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #2d2d44;
+  background: #FFFFFF;
   border-radius: 16px;
 }
 
@@ -165,7 +168,7 @@
 }
 
 .empty-state p {
-  color: #888;
+  color: #666666;
   font-size: 14px;
 }
 
@@ -177,9 +180,10 @@
 }
 
 .order-item {
-  background: #2d2d44;
+  background: #FFFFFF;
   border-radius: 12px;
   padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .order-item-header {
@@ -190,13 +194,13 @@
 
 .order-date {
   font-size: 12px;
-  color: #888;
+  color: #666666;
 }
 
 .order-earnings {
   font-size: 16px;
   font-weight: 600;
-  color: #7AC9A8;
+  color: #FF6B00;
 }
 
 .order-route {
@@ -205,6 +209,7 @@
   gap: 8px;
   margin-bottom: 12px;
   font-size: 14px;
+  color: #333333;
 }
 
 .route-from,
@@ -216,7 +221,7 @@
 }
 
 .route-arrow {
-  color: #E8A45C;
+  color: #FF6B00;
 }
 
 .order-item-footer {
@@ -232,26 +237,26 @@
 }
 
 .order-status.completed {
-  background: rgba(122, 201, 168, 0.2);
-  color: #7AC9A8;
+  background: rgba(82, 196, 26, 0.1);
+  color: #52C41A;
 }
 
 .order-status.cancelled {
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
+  background: rgba(255, 77, 79, 0.1);
+  color: #FF4D4F;
 }
 
 /* Demo Notice */
 .demo-notice {
   margin: 24px 20px 0;
   padding: 16px;
-  background: rgba(232, 164, 92, 0.1);
-  border: 1px solid rgba(232, 164, 92, 0.3);
+  background: rgba(255, 107, 0, 0.06);
+  border: 1px solid rgba(255, 107, 0, 0.2);
   border-radius: 12px;
   text-align: center;
 }
 
 .demo-notice p {
-  color: #E8A45C;
+  color: #FF6B00;
   font-size: 14px;
 }
