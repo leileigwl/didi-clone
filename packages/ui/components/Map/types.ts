@@ -162,6 +162,6 @@ export type RouteInfo = {
   path: Position[];
 };
 
-export type MarkerType = 'passenger' | 'driver' | 'origin' | 'destination' | 'car';
+export type MarkerType = 'passenger' | 'driver' | 'origin' | 'destination' | 'car' | 'myLocation';
 
 export type MapTheme = 'normal' | 'dark' | 'light';

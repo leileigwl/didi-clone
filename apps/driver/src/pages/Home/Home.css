@@ -61,6 +61,35 @@
   background: white;
 }
 
+/* 回到我的位置按钮 */
+.locate-me-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.locate-me-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.locate-me-btn:active {
+  transform: scale(0.95);
+}
+
 .location-info-bar {
   position: absolute;
   bottom: 0;
@@ -97,6 +126,80 @@
 .map-error h3 {
   color: #FF6B00;
   margin-bottom: 12px;
+}
+
+/* 定位加载中遮罩 */
+.locating-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.locating-animation {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.locating-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #1890ff;
+  animation: locating-pulse-ring 2s ease-out infinite;
+}
+
+.locating-pulse.delay-1 {
+  animation-delay: 0.5s;
+}
+
+.locating-pulse.delay-2 {
+  animation-delay: 1s;
+}
+
+@keyframes locating-pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.locating-icon {
+  font-size: 56px;
+  z-index: 1;
+  animation: locating-bounce 1s ease-in-out infinite;
+}
+
+@keyframes locating-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.locating-text {
+  margin-top: 24px;
+  font-size: 16px;
+  color: #1890ff;
+  font-weight: 500;
 }
 
 /* Current Order Section */

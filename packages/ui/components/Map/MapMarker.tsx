@@ -57,6 +57,20 @@ const markerIcons: Record<MarkerType, { icon: string; size: [number, number]; an
     size: [40, 48],
     anchor: [20, 24],
   },
+  myLocation: {
+    icon: `<svg viewBox="0 0 44 56" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1890ff" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="M22 0C9.85 0 0 9.85 0 22c0 12.15 22 34 22 34s22-21.85 22-34C44 9.85 34.15 0 22 0z" fill="#1890ff" filter="url(#shadow)"/>
+      <circle cx="22" cy="18" r="8" fill="white"/>
+      <circle cx="22" cy="18" r="4" fill="#1890ff"/>
+    </svg>`,
+    size: [44, 56],
+    anchor: [22, 56],
+  },
 };
 
 const MapMarker: React.FC<MapMarkerProps> = ({
