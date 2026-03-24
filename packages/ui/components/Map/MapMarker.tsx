@@ -49,15 +49,13 @@ const markerIcons: Record<MarkerType, { icon: string; size: [number, number]; an
     anchor: [16, 16],
   },
   car: {
-    icon: `<svg viewBox="0 0 40 24" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="8" width="36" height="12" rx="4" fill="#fa8c16"/>
-      <rect x="6" y="4" width="20" height="10" rx="2" fill="#fa8c16"/>
-      <circle cx="10" cy="20" r="3" fill="#333"/>
-      <circle cx="30" cy="20" r="3" fill="#333"/>
-      <rect x="26" y="6" width="8" height="4" rx="1" fill="white" opacity="0.8"/>
+    icon: `<svg viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="rgba(255,107,0,0.2)"/>
+      <circle cx="20" cy="20" r="10" fill="#FF6B00"/>
+      <circle cx="20" cy="20" r="5" fill="white"/>
     </svg>`,
-    size: [40, 24],
-    anchor: [20, 12],
+    size: [40, 48],
+    anchor: [20, 24],
   },
 };
 

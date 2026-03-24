@@ -128,7 +128,7 @@ export default function HomePage({ api }: HomePageProps) {
           }
           setCurrentLocation(pos)
           map.setCenter([pos.lng, pos.lat])
-          map.setZoom(16)
+          map.setZoom(18)
           reverseGeocode(pos, AMap)
           console.log('CoreLocation定位成功:', `(${pos.lng.toFixed(4)}, ${pos.lat.toFixed(4)})`)
           return true
@@ -295,6 +295,7 @@ export default function HomePage({ api }: HomePageProps) {
           }
           setCurrentLocation(pos)
           currentMap.setCenter([pos.lng, pos.lat])
+          currentMap.setZoom(18)
           if (result.formattedAddress) {
             // 已有地址，无需额外逆地理编码
           } else {
@@ -326,7 +327,7 @@ export default function HomePage({ api }: HomePageProps) {
             if (result.city === '金华市') {
               setCurrentLocation(DEFAULT_YIWU)
               map.setCenter([DEFAULT_YIWU.lng, DEFAULT_YIWU.lat])
-              map.setZoom(14)
+              map.setZoom(18)
               console.log('IP定位: 金华市区域，默认使用义乌市中心')
             } else {
               const center = bounds.getCenter()
@@ -337,7 +338,7 @@ export default function HomePage({ api }: HomePageProps) {
               }
               setCurrentLocation(pos)
               map.setCenter([pos.lng, pos.lat])
-              map.setZoom(14)
+              map.setZoom(18)
               console.log('IP定位结果:', result.city)
             }
           }
@@ -478,11 +479,11 @@ export default function HomePage({ api }: HomePageProps) {
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
           center={pickup || currentLocation || DEFAULT_YIWU}
-          zoom={16}
+          zoom={18}
           onMapReady={handleMapReady}
         >
-          {/* 当前位置 */}
-          {currentLocation && !pickup && (
+          {/* 我的位置（始终显示） */}
+          {currentLocation && (
             <MapMarker
               position={currentLocation}
               type="origin"
@@ -491,10 +492,10 @@ export default function HomePage({ api }: HomePageProps) {
           )}
 
           {/* 上车点 */}
-          {pickup && (
+          {pickup && currentLocation && pickup.lng !== currentLocation.lng && pickup.lat !== currentLocation.lat && (
             <MapMarker
               position={pickup}
-              type="origin"
+              type="destination"
               label="上车点"
             />
           )}
@@ -518,13 +519,20 @@ export default function HomePage({ api }: HomePageProps) {
           )}
         </MapView>
 
-        {/* 定位按钮 */}
+        {/* 回到我的位置按钮 */}
         <button
           className="locate-button"
-          onClick={() => mapRef.current && getCurrentLocation()}
-          disabled={isLocating || !mapReady}
+          onClick={() => {
+            if (currentLocation && mapRef.current) {
+              mapRef.current.map.setCenter([currentLocation.lng, currentLocation.lat])
+              mapRef.current.map.setZoom(18)
+            } else if (mapRef.current) {
+              getCurrentLocation()
+            }
+          }}
+          disabled={!mapReady}
         >
-          {isLocating ? '定位中...' : '📍 定位'}
+          📍
         </button>
       </div>
 
