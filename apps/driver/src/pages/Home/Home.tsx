@@ -1,9 +1,14 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
+import { MapView, MapMarker, MapRoute, DriverTracker, type Position, type RouteInfo } from '@didi/ui'
 import StatusBar from '../../components/StatusBar/StatusBar'
 import OrderCard from '../../components/OrderCard/OrderCard'
 import './Home.css'
+
+// 高德地图 Key
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
+const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || ''
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
@@ -16,6 +21,10 @@ const Home: React.FC = () => {
     acceptOrder,
     rejectOrder
   } = useDriverStore()
+
+  const [driverLocation, setDriverLocation] = useState<Position>({ lng: 116.397428, lat: 39.90923 })
+  const [routePath, setRoutePath] = useState<Position[]>([])
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline
@@ -38,29 +47,112 @@ const Home: React.FC = () => {
     }
   }
 
+  // 路线规划完成
+  const handleRouteComplete = useCallback((info: RouteInfo) => {
+    setRouteInfo(info)
+  }, [])
+
+  // 模拟获取司机位置
+  useEffect(() => {
+    if (isOnline && navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setDriverLocation({
+            lng: position.coords.longitude,
+            lat: position.coords.latitude
+          })
+        },
+        (error) => {
+          console.warn('定位失败，使用模拟位置')
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      )
+      return () => navigator.geolocation.clearWatch(watchId)
+    }
+  }, [isOnline])
+
+  // 检查地图配置
+  if (!AMAP_KEY || AMAP_KEY === 'your_amap_web_key_here') {
+    return (
+      <div className="home-container">
+        <StatusBar />
+        <div className="map-error">
+          <h3>地图配置缺失</h3>
+          <p>请在 apps/driver/.env 文件中配置高德地图 API Key</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="home-container">
       <StatusBar />
 
-      {/* Online/Offline Toggle */}
-      <div className="online-toggle-section">
-        <button
-          className={`online-toggle-btn ${isOnline ? 'online' : 'offline'}`}
-          onClick={handleOnlineToggle}
+      {/* 地图区域 */}
+      <div className="map-section">
+        <MapView
+          amapKey={AMAP_KEY}
+          securityJsCode={AMAP_SECURITY_CODE}
+          center={driverLocation}
+          zoom={14}
+          theme="dark"
         >
-          <div className="toggle-indicator">
+          {/* 司机位置 */}
+          <MapMarker
+            position={driverLocation}
+            type="car"
+            label={isOnline ? '在线' : '离线'}
+          />
+
+          {/* 当前订单 - 显示乘客位置和路线 */}
+          {currentOrder && (
+            <>
+              <MapMarker
+                position={currentOrder.pickup}
+                type="origin"
+                label="乘客位置"
+              />
+              <MapMarker
+                position={currentOrder.destination}
+                type="destination"
+                label="目的地"
+              />
+              <MapRoute
+                origin={driverLocation}
+                destination={currentOrder.pickup}
+                onRouteComplete={handleRouteComplete}
+              />
+            </>
+          )}
+        </MapView>
+
+        {/* 在线状态切换 */}
+        <div className="map-overlay">
+          <button
+            className={`online-toggle-btn ${isOnline ? 'online' : 'offline'}`}
+            onClick={handleOnlineToggle}
+          >
             <span className={`status-dot ${isOnline ? 'online' : ''}`}></span>
-          </div>
-          <span className="toggle-text">
-            {isOnline ? 'Online - Accepting Orders' : 'Offline - Not Accepting Orders'}
-          </span>
-        </button>
+            <span>{isOnline ? '在线接单' : '离线休息'}</span>
+          </button>
+        </div>
+
+        {/* 司机位置信息 */}
+        <div className="location-info-bar">
+          <span className="location-icon">📍</span>
+          <span>当前位置: 北京市中心</span>
+          {routeInfo && (
+            <span className="distance-info">
+              距乘客 {Math.round(routeInfo.distance / 1000 * 10) / 10} 公里
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Current Order */}
+      {/* 当前订单 */}
       {currentOrder && (
         <div className="current-order-section">
-          <h2>Current Order</h2>
+          <h2>当前订单</h2>
           <div className="current-order-card" onClick={handleViewCurrentOrder}>
             <div className="order-route">
               <div className="route-point pickup">
@@ -77,15 +169,15 @@ const Home: React.FC = () => {
               <span className="order-status">{currentOrder.status}</span>
               <span className="order-price">¥{currentOrder.price}</span>
             </div>
-            <button className="view-order-btn">View Details</button>
+            <button className="view-order-btn">查看详情</button>
           </div>
         </div>
       )}
 
-      {/* Pending Orders */}
+      {/* 新订单 */}
       {!currentOrder && pendingOrders.length > 0 && (
         <div className="pending-orders-section">
-          <h2>New Orders ({pendingOrders.length})</h2>
+          <h2>新订单 ({pendingOrders.length})</h2>
           <div className="pending-orders-list">
             {pendingOrders.map(order => (
               <OrderCard
@@ -99,7 +191,7 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Waiting for Orders */}
+      {/* 等待订单 */}
       {!currentOrder && pendingOrders.length === 0 && isOnline && (
         <div className="waiting-section">
           <div className="waiting-animation">
@@ -108,22 +200,27 @@ const Home: React.FC = () => {
             <div className="pulse-ring delay-2"></div>
             <span className="waiting-icon">🚗</span>
           </div>
-          <p className="waiting-text">Waiting for orders...</p>
+          <p className="waiting-text">正在等待订单...</p>
+          {routeInfo && (
+            <p className="route-hint">
+              距离最近乘客约 {Math.round(routeInfo.distance / 1000 * 10) / 10} 公里
+            </p>
+          )}
         </div>
       )}
 
-      {/* Offline Message */}
-      {!isOnline && (
+      {/* 离线提示 */}
+      {!isOnline && !currentOrder && (
         <div className="offline-message">
           <span className="offline-icon">💤</span>
-          <p>You are currently offline</p>
-          <p className="offline-hint">Go online to start receiving orders</p>
+          <p>当前处于离线状态</p>
+          <p className="offline-hint">上线后开始接收订单</p>
         </div>
       )}
 
-      {/* Today's Earnings */}
+      {/* 今日收入 */}
       <div className="earnings-section">
-        <h2>Today's Earnings</h2>
+        <h2>今日收入</h2>
         <div className="earnings-card" onClick={() => navigate('/earnings')}>
           <div className="earnings-amount">
             <span className="currency">¥</span>
@@ -132,15 +229,15 @@ const Home: React.FC = () => {
           <div className="earnings-stats">
             <div className="stat">
               <span className="stat-value">{earnings.totalTrips}</span>
-              <span className="stat-label">Trips</span>
+              <span className="stat-label">单数</span>
             </div>
             <div className="stat">
               <span className="stat-value">{earnings.totalHours.toFixed(1)}h</span>
-              <span className="stat-label">Online</span>
+              <span className="stat-label">在线</span>
             </div>
           </div>
           <div className="view-earnings-btn">
-            <span>View Details</span>
+            <span>查看详情</span>
             <span>→</span>
           </div>
         </div>

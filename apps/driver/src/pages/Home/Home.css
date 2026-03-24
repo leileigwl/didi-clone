@@ -1,65 +1,102 @@
 .home-container {
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
   min-height: 100vh;
   background: #1a1a2e;
   color: #ffffff;
 }
 
-/* Online Toggle Section */
-.online-toggle-section {
-  margin-bottom: 24px;
+/* Map Section */
+.map-section {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  margin-bottom: 20px;
 }
 
-.online-toggle-btn {
+.map-section .map-view-container {
   width: 100%;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 16px;
+  height: 100%;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+}
+
+.map-overlay .online-toggle-btn {
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 16px;
   font-weight: 500;
 }
 
-.online-toggle-btn.online {
+.map-overlay .online-toggle-btn.online {
   background: linear-gradient(135deg, #7AC9A8 0%, #5BA887 100%);
   color: #1a1a2e;
 }
 
-.online-toggle-btn.offline {
+.map-overlay .online-toggle-btn.offline {
   background: #2d2d44;
   color: #888;
 }
 
-.toggle-indicator {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.status-dot {
-  width: 12px;
-  height: 12px;
+.map-overlay .status-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #888;
-  transition: all 0.3s ease;
 }
 
-.status-dot.online {
+.map-overlay .status-dot.online {
   background: #1a1a2e;
-  box-shadow: 0 0 10px rgba(26, 26, 46, 0.5);
 }
 
-.toggle-text {
-  flex: 1;
-  text-align: left;
+.location-info-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.location-info-bar .location-icon {
+  font-size: 16px;
+}
+
+.distance-info {
+  margin-left: auto;
+  color: #7AC9A8;
+  font-weight: 500;
+}
+
+.map-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.map-error h3 {
+  color: #E8A45C;
+  margin-bottom: 12px;
 }
 
 /* Current Order Section */
