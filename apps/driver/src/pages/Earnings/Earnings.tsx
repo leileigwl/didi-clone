@@ -1,9 +1,25 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDriverStore, OrderHistory } from '../../store/driverStore'
+import { useDriverStore } from '../../store/driverStore'
 import './Earnings.css'
 
 type TimeFilter = 'today' | 'week' | 'month'
+
+const FILTER_LABELS: Record<TimeFilter, string> = {
+  today: '今天',
+  week: '本周',
+  month: '本月',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: '等待接单',
+  accepted: '已接单',
+  driver_arriving: '赶往中',
+  arrived: '已到达',
+  in_progress: '行程中',
+  completed: '已完成',
+  cancelled: '已取消',
+}
 
 const Earnings: React.FC = () => {
   const navigate = useNavigate()
@@ -12,14 +28,10 @@ const Earnings: React.FC = () => {
 
   const getFilteredEarnings = () => {
     switch (activeFilter) {
-      case 'today':
-        return earnings.today
-      case 'week':
-        return earnings.week
-      case 'month':
-        return earnings.month
-      default:
-        return earnings.today
+      case 'today': return earnings.today
+      case 'week': return earnings.week
+      case 'month': return earnings.month
+      default: return earnings.today
     }
   }
 
@@ -32,14 +44,10 @@ const Earnings: React.FC = () => {
     return orderHistory.filter(order => {
       const orderDate = new Date(order.date)
       switch (activeFilter) {
-        case 'today':
-          return orderDate >= today
-        case 'week':
-          return orderDate >= weekAgo
-        case 'month':
-          return orderDate >= monthAgo
-        default:
-          return true
+        case 'today': return orderDate >= today
+        case 'week': return orderDate >= weekAgo
+        case 'month': return orderDate >= monthAgo
+        default: return true
       }
     })
   }
@@ -57,7 +65,7 @@ const Earnings: React.FC = () => {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('zh-CN', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -67,16 +75,16 @@ const Earnings: React.FC = () => {
 
   return (
     <div className="earnings-container">
-      {/* Header */}
+      {/* 头部 */}
       <div className="earnings-header">
         <button className="back-btn" onClick={() => navigate('/')}>
           ←
         </button>
-        <h1>Earnings</h1>
+        <h1>收入</h1>
         <div className="header-spacer"></div>
       </div>
 
-      {/* Time Filter */}
+      {/* 时间筛选 */}
       <div className="time-filter">
         {(['today', 'week', 'month'] as TimeFilter[]).map(filter => (
           <button
@@ -84,17 +92,15 @@ const Earnings: React.FC = () => {
             className={`filter-btn ${activeFilter === filter ? 'active' : ''}`}
             onClick={() => setActiveFilter(filter)}
           >
-            {filter === 'today' && 'Today'}
-            {filter === 'week' && 'This Week'}
-            {filter === 'month' && 'This Month'}
+            {FILTER_LABELS[filter]}
           </button>
         ))}
       </div>
 
-      {/* Earnings Summary */}
+      {/* 收入汇总 */}
       <div className="earnings-summary">
         <div className="summary-card">
-          <div className="summary-label">Total Earnings</div>
+          <div className="summary-label">总收入</div>
           <div className="summary-amount">
             <span className="currency">¥</span>
             <span className="amount">{filteredEarnings.toFixed(2)}</span>
@@ -102,32 +108,32 @@ const Earnings: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* 数据统计 */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">🚗</div>
           <div className="stat-value">{stats.trips}</div>
-          <div className="stat-label">Trips</div>
+          <div className="stat-label">单数</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">⏱️</div>
           <div className="stat-value">{stats.hours.toFixed(1)}h</div>
-          <div className="stat-label">Online</div>
+          <div className="stat-label">在线时长</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">💰</div>
           <div className="stat-value">¥{stats.avgPerTrip.toFixed(0)}</div>
-          <div className="stat-label">Avg/Trip</div>
+          <div className="stat-label">平均单价</div>
         </div>
       </div>
 
-      {/* Order History */}
+      {/* 行程历史 */}
       <div className="order-history-section">
-        <h2>Trip History</h2>
+        <h2>行程记录</h2>
         {filteredOrders.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">📋</span>
-            <p>No trips for this period</p>
+            <p>暂无行程记录</p>
           </div>
         ) : (
           <div className="order-list">
@@ -144,7 +150,7 @@ const Earnings: React.FC = () => {
                 </div>
                 <div className="order-item-footer">
                   <span className={`order-status ${order.status}`}>
-                    {order.status}
+                    {STATUS_LABELS[order.status] || order.status}
                   </span>
                 </div>
               </div>
@@ -153,10 +159,10 @@ const Earnings: React.FC = () => {
         )}
       </div>
 
-      {/* Demo Data Notice */}
+      {/* 提示 */}
       {orderHistory.length === 0 && (
         <div className="demo-notice">
-          <p>This is a demo. Connect to the backend to see real data.</p>
+          <p>连接后端后可查看真实数据</p>
         </div>
       )}
     </div>

@@ -52,8 +52,12 @@ export interface Order {
   distance: number
   duration: number
   driver?: Driver | null
-  createdAt: string
-  updatedAt: string
+  createdAt: string | Date
+  updatedAt: string | Date
+  /** 司机距乘客上车点的驾车距离 (km) */
+  distanceFromDriver?: number
+  /** 司机到乘客上车点的驾车时间 (分钟) */
+  durationFromDriver?: number
 }
 
 export interface CreateOrderInput {

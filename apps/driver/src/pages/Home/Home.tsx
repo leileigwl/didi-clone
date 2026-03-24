@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDriverStore } from '../../store/driverStore'
 import { useSocket } from '../../hooks/useSocket'
-import { MapView, MapMarker, MapRoute, DriverTracker, type Position, type RouteInfo } from '@didi/ui'
+import { MapView, MapMarker, MapRoute, type Position, type RouteInfo } from '@didi/ui'
 import StatusBar from '../../components/StatusBar/StatusBar'
 import OrderCard from '../../components/OrderCard/OrderCard'
 import './Home.css'
@@ -10,6 +10,16 @@ import './Home.css'
 // 高德地图 Key
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '7bf10417175742fc23ec515c46599e8d'
 const AMAP_SECURITY_CODE = import.meta.env.VITE_AMAP_SECURITY_CODE || '2d974a0b6b5a0df9c012c82a33684e15'
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: '等待接单',
+  accepted: '已接单',
+  driver_arriving: '赶往上车点',
+  arrived: '已到达',
+  in_progress: '行程中',
+  completed: '已完成',
+  cancelled: '已取消',
+}
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
@@ -28,7 +38,6 @@ const Home: React.FC = () => {
   // 义乌市中心坐标作为默认位置
   const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306 }
   const [driverLocation, setDriverLocation] = useState<Position>(DEFAULT_YIWU)
-  const [routePath, setRoutePath] = useState<Position[]>([])
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
   const [currentAddress, setCurrentAddress] = useState('定位中...')
@@ -385,7 +394,7 @@ const Home: React.FC = () => {
       {/* 当前订单 */}
       {currentOrder && (
         <div className="current-order-section">
-          <h2>当前订单</h2>
+          <h2>进行中订单</h2>
           <div className="current-order-card" onClick={handleViewCurrentOrder}>
             <div className="order-route">
               <div className="route-point pickup">
@@ -399,7 +408,7 @@ const Home: React.FC = () => {
               </div>
             </div>
             <div className="order-info">
-              <span className="order-status">{currentOrder.status}</span>
+              <span className="order-status">{STATUS_LABELS[currentOrder.status] || currentOrder.status}</span>
               <span className="order-price">¥{currentOrder.price}</span>
             </div>
             <button className="view-order-btn">查看详情</button>
@@ -410,7 +419,7 @@ const Home: React.FC = () => {
       {/* 新订单 */}
       {!currentOrder && pendingOrders.length > 0 && (
         <div className="pending-orders-section">
-          <h2>新订单 ({pendingOrders.length})</h2>
+          <h2>待接订单 <span className="order-count-badge">{pendingOrders.length}</span></h2>
           <div className="pending-orders-list">
             {pendingOrders.map(order => (
               <OrderCard

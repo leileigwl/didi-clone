@@ -13,7 +13,7 @@ interface NavigationInfo {
 const Navigation: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentOrder, location, updateOrderStatus } = useDriverStore()
+  const { currentOrder, location, updateOrderStatus, addEarning } = useDriverStore()
   const [navInfo, setNavInfo] = useState<NavigationInfo>({
     distance: 0,
     duration: 0,
@@ -27,7 +27,6 @@ const Navigation: React.FC = () => {
       return
     }
 
-    // Set initial navigation info
     setNavInfo({
       distance: currentOrder.distance,
       duration: currentOrder.duration,
@@ -36,7 +35,6 @@ const Navigation: React.FC = () => {
   }, [currentOrder, orderId, navigate])
 
   useEffect(() => {
-    // Simulate real-time updates
     const interval = setInterval(() => {
       setNavInfo(prev => ({
         ...prev,
@@ -48,31 +46,28 @@ const Navigation: React.FC = () => {
     return () => clearInterval(interval)
   }, [])
 
-  const calculateETA = (seconds: number): string => {
+  const calculateETA = (minutes: number): string => {
     const now = new Date()
-    const arrival = new Date(now.getTime() + seconds * 1000)
-    return arrival.toLocaleTimeString('en-US', {
+    const arrival = new Date(now.getTime() + minutes * 60 * 1000)
+    return arrival.toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     })
   }
 
-  const formatDistance = (meters: number): string => {
-    if (meters >= 1000) {
-      return `${(meters / 1000).toFixed(1)} km`
-    }
-    return `${Math.round(meters)} m`
+  const formatDistance = (km: number): string => {
+    if (km >= 1) return `${km.toFixed(1)} 公里`
+    return `${Math.round(km * 1000)} 米`
   }
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60)
+  const formatDuration = (minutes: number): string => {
     if (minutes >= 60) {
-      const hours = Math.floor(minutes / 60)
-      const remainingMinutes = minutes % 60
-      return `${hours}h ${remainingMinutes}m`
+      const h = Math.floor(minutes / 60)
+      const m = Math.round(minutes % 60)
+      return m > 0 ? `${h}小时${m}分钟` : `${h}小时`
     }
-    return `${minutes} min`
+    return `${Math.round(minutes)} 分钟`
   }
 
   const handleBack = () => {
@@ -80,7 +75,9 @@ const Navigation: React.FC = () => {
   }
 
   const handleComplete = async () => {
+    if (!currentOrder) return
     updateOrderStatus('completed')
+    addEarning(currentOrder.price)
     navigate(`/order/${orderId}`)
   }
 
@@ -90,7 +87,6 @@ const Navigation: React.FC = () => {
 
   const handleOpenExternalNav = () => {
     if (!currentOrder) return
-
     const { lat, lng } = currentOrder.destination
     const navUrl = `https://uri.amap.com/navigation?to=${lng},${lat},destination&mode=car&policy=1&src=didi-driver`
     window.electronAPI?.openNavigation(navUrl)
@@ -106,88 +102,87 @@ const Navigation: React.FC = () => {
 
   return (
     <div className="navigation-container">
-      {/* Map View */}
+      {/* 地图 */}
       <div className="map-wrapper">
         <MapView
-          center={location || { lat: 39.9042, lng: 116.4074 }}
+          center={location || { lat: 29.306, lng: 120.075 }}
           zoom={15}
           style={{ width: '100%', height: '100%' }}
         >
           {location && (
             <MapRoute
-              start={location}
-              end={destination}
+              origin={location}
+              destination={destination}
               color="#7AC9A8"
             />
           )}
         </MapView>
       </div>
 
-      {/* Top Bar */}
+      {/* 顶部栏 */}
       <div className="nav-top-bar">
         <button className="nav-back-btn" onClick={handleBack}>
-          ← Back
+          ← 返回
         </button>
         <div className="nav-title">
-          {currentOrder.status === 'in_progress' ? 'To Destination' : 'To Pickup'}
+          {currentOrder.status === 'in_progress' ? '前往目的地' : '前往上车点'}
         </div>
         <button className="mute-btn" onClick={toggleMute}>
           {isMuted ? '🔇' : '🔊'}
         </button>
       </div>
 
-      {/* Destination Card */}
+      {/* 目的地卡片 */}
       <div className="destination-card">
         <div className="destination-marker">
           {currentOrder.status === 'in_progress' ? '🎯' : '📍'}
         </div>
         <div className="destination-info">
           <span className="destination-label">
-            {currentOrder.status === 'in_progress' ? 'Destination' : 'Pickup Location'}
+            {currentOrder.status === 'in_progress' ? '目的地' : '上车点'}
           </span>
           <span className="destination-address">{destination.address}</span>
         </div>
       </div>
 
-      {/* Navigation Info */}
+      {/* 导航信息 */}
       <div className="nav-info-panel">
         <div className="nav-stats">
           <div className="nav-stat primary">
             <span className="stat-value">{formatDistance(navInfo.distance)}</span>
-            <span className="stat-label">Remaining</span>
+            <span className="stat-label">剩余距离</span>
           </div>
           <div className="nav-stat">
             <span className="stat-value">{formatDuration(navInfo.duration)}</span>
-            <span className="stat-label">ETA</span>
+            <span className="stat-label">预计时间</span>
           </div>
           <div className="nav-stat">
             <span className="stat-value">{navInfo.eta}</span>
-            <span className="stat-label">Arrive At</span>
+            <span className="stat-label">到达时间</span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Actions */}
+      {/* 底部操作 */}
       <div className="nav-bottom-actions">
         <button className="external-nav-btn" onClick={handleOpenExternalNav}>
           <span>🗺️</span>
-          <span>Open in Amap</span>
+          <span>高德导航</span>
         </button>
 
         {currentOrder.status === 'in_progress' && (
           <button className="complete-btn" onClick={handleComplete}>
-            Complete Trip
+            完成行程
           </button>
         )}
 
-        {/* Contact Button */}
         <div className="contact-btn-group">
           <button className="contact-action-btn call">📞</button>
           <button className="contact-action-btn message">💬</button>
         </div>
       </div>
 
-      {/* Speed & Traffic Info */}
+      {/* 速度和路况 */}
       <div className="traffic-info">
         <div className="speed-indicator">
           <span className="speed-value">45</span>
@@ -195,7 +190,7 @@ const Navigation: React.FC = () => {
         </div>
         <div className="traffic-status">
           <span className="traffic-light green"></span>
-          <span className="traffic-text">Smooth Traffic</span>
+          <span className="traffic-text">路况畅通</span>
         </div>
       </div>
     </div>

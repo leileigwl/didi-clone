@@ -4,6 +4,14 @@ import { useDriverStore } from '../../store/driverStore'
 import { OrderStatus } from '@didi/api-client'
 import './OrderDetail.css'
 
+const STATUS_LABELS: Record<string, string> = {
+  accepted: '已接单',
+  driver_arriving: '赶往上车点',
+  arrived: '已到达',
+  in_progress: '行程中',
+  completed: '已完成',
+}
+
 const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
@@ -35,14 +43,10 @@ const OrderDetail: React.FC = () => {
   }
 
   const handleNavigate = () => {
-    // Open Amap navigation
     const { lat, lng } = currentOrder.pickup
     const destLat = currentOrder.destination.lat
     const destLng = currentOrder.destination.lng
-
-    // Amap navigation URL
     const navUrl = `https://uri.amap.com/navigation?from=${lng},${lat},start&to=${destLng},${destLat},end&mode=car&policy=1&src=didi-driver`
-
     window.electronAPI?.openNavigation(navUrl)
   }
 
@@ -54,27 +58,27 @@ const OrderDetail: React.FC = () => {
     switch (currentOrder.status) {
       case 'accepted':
         return {
-          text: 'I am Arriving',
+          text: '我快到了',
           nextStatus: 'driver_arriving' as OrderStatus,
-          color: '#E8A45C'
+          color: '#FF6B00'
         }
       case 'driver_arriving':
         return {
-          text: 'I have Arrived',
+          text: '已到达上车点',
           nextStatus: 'arrived' as OrderStatus,
-          color: '#7AC9A8'
+          color: '#52C41A'
         }
       case 'arrived':
         return {
-          text: 'Start Trip',
+          text: '开始行程',
           nextStatus: 'in_progress' as OrderStatus,
-          color: '#7AC9A8'
+          color: '#52C41A'
         }
       case 'in_progress':
         return {
-          text: 'Complete Trip',
+          text: '完成行程',
           nextStatus: 'completed' as OrderStatus,
-          color: '#7AC9A8'
+          color: '#52C41A'
         }
       default:
         return null
@@ -83,65 +87,59 @@ const OrderDetail: React.FC = () => {
 
   const buttonConfig = getButtonConfig()
 
-  const formatDistance = (meters: number) => {
-    if (meters >= 1000) {
-      return `${(meters / 1000).toFixed(1)} km`
-    }
-    return `${meters} m`
+  const formatDistance = (km: number) => {
+    if (km >= 1) return `${km.toFixed(1)} 公里`
+    return `${Math.round(km * 1000)} 米`
   }
 
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
+  const formatDuration = (minutes: number) => {
     if (minutes >= 60) {
-      const hours = Math.floor(minutes / 60)
-      const remainingMinutes = minutes % 60
-      return `${hours}h ${remainingMinutes}m`
+      const h = Math.floor(minutes / 60)
+      const m = Math.round(minutes % 60)
+      return m > 0 ? `${h}小时${m}分钟` : `${h}小时`
     }
-    return `${minutes} min`
+    return `${Math.round(minutes)} 分钟`
   }
+
+  const steps = ['accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed']
+  const currentIndex = steps.indexOf(currentOrder.status)
 
   return (
     <div className="order-detail-container">
-      {/* Header */}
+      {/* 头部 */}
       <div className="order-header">
         <button className="back-btn" onClick={() => navigate('/')}>
           ←
         </button>
-        <h1>Order Details</h1>
+        <h1>订单详情</h1>
         <div className="order-id">#{orderId?.slice(-6)}</div>
       </div>
 
-      {/* Status Progress */}
+      {/* 状态进度 */}
       <div className="status-progress">
-        {['accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed'].map((status, index) => (
+        {steps.map((status, index) => (
           <div
             key={status}
             className={`progress-step ${
-              ['accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed'].indexOf(currentOrder.status) >= index
-                ? 'active'
-                : ''
+              currentIndex >= index ? 'active' : ''
             } ${currentOrder.status === status ? 'current' : ''}`}
           >
             <div className="step-dot"></div>
             <div className="step-label">
-              {status === 'accepted' && 'Accepted'}
-              {status === 'driver_arriving' && 'Arriving'}
-              {status === 'arrived' && 'Arrived'}
-              {status === 'in_progress' && 'In Trip'}
-              {status === 'completed' && 'Completed'}
+              {STATUS_LABELS[status] || status}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Order Info Card */}
+      {/* 订单信息卡片 */}
       <div className="order-info-card">
-        {/* Route */}
+        {/* 路线 */}
         <div className="route-section">
           <div className="route-point pickup">
             <div className="point-marker pickup-marker"></div>
             <div className="point-info">
-              <span className="point-label">Pickup</span>
+              <span className="point-label">上车点</span>
               <span className="point-address">{currentOrder.pickup.address}</span>
             </div>
           </div>
@@ -149,51 +147,51 @@ const OrderDetail: React.FC = () => {
           <div className="route-point destination">
             <div className="point-marker destination-marker"></div>
             <div className="point-info">
-              <span className="point-label">Destination</span>
+              <span className="point-label">目的地</span>
               <span className="point-address">{currentOrder.destination.address}</span>
             </div>
           </div>
         </div>
 
-        {/* Trip Details */}
+        {/* 行程详情 */}
         <div className="trip-details">
           <div className="detail-item">
             <span className="detail-icon">📏</span>
             <span className="detail-value">{formatDistance(currentOrder.distance)}</span>
-            <span className="detail-label">Distance</span>
+            <span className="detail-label">距离</span>
           </div>
           <div className="detail-item">
             <span className="detail-icon">⏱️</span>
             <span className="detail-value">{formatDuration(currentOrder.duration)}</span>
-            <span className="detail-label">Duration</span>
+            <span className="detail-label">时长</span>
           </div>
           <div className="detail-item">
             <span className="detail-icon">💰</span>
-            <span className="detail-value">¥{currentOrder.price.toFixed(2)}</span>
-            <span className="detail-label">Earnings</span>
+            <span className="detail-value">¥{currentOrder.price.toFixed(0)}</span>
+            <span className="detail-label">收入</span>
           </div>
         </div>
       </div>
 
-      {/* Navigation Buttons */}
+      {/* 导航按钮 */}
       <div className="navigation-section">
         <button className="nav-btn secondary" onClick={handleNavigate}>
           <span className="nav-icon">🗺️</span>
-          <span>Open in Amap</span>
+          <span>高德导航</span>
         </button>
         <button className="nav-btn primary" onClick={handleStartNavigation}>
           <span className="nav-icon">🧭</span>
-          <span>In-App Navigation</span>
+          <span>应用内导航</span>
         </button>
       </div>
 
-      {/* Contact Section */}
+      {/* 乘客信息 */}
       <div className="contact-section">
-        <h3>Passenger</h3>
+        <h3>乘客信息</h3>
         <div className="contact-card">
           <div className="contact-avatar">👤</div>
           <div className="contact-info">
-            <span className="contact-name">Passenger #{currentOrder.userId.slice(-4)}</span>
+            <span className="contact-name">乘客 #{currentOrder.userId.slice(-4)}</span>
           </div>
           <div className="contact-actions">
             <button className="contact-btn call">📞</button>
@@ -202,7 +200,7 @@ const OrderDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* 操作按钮 */}
       {buttonConfig && currentOrder.status !== 'completed' && (
         <div className="action-section">
           <button
@@ -211,19 +209,19 @@ const OrderDetail: React.FC = () => {
             onClick={() => handleStatusChange(buttonConfig.nextStatus)}
             disabled={isLoading}
           >
-            {isLoading ? 'Processing...' : buttonConfig.text}
+            {isLoading ? '处理中...' : buttonConfig.text}
           </button>
         </div>
       )}
 
-      {/* Completed State */}
+      {/* 完成状态 */}
       {currentOrder.status === 'completed' && (
         <div className="completed-section">
           <div className="completed-icon">✅</div>
-          <h2>Trip Completed!</h2>
-          <p className="completed-earnings">You earned ¥{currentOrder.price.toFixed(2)}</p>
+          <h2>行程完成!</h2>
+          <p className="completed-earnings">本单收入 ¥{currentOrder.price.toFixed(0)}</p>
           <button className="home-btn" onClick={() => navigate('/')}>
-            Back to Home
+            返回首页
           </button>
         </div>
       )}

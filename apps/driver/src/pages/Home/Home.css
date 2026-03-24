@@ -102,6 +102,7 @@
 /* Current Order Section */
 .current-order-section {
   margin-bottom: 24px;
+  padding: 0 16px;
 }
 
 .current-order-section h2 {
@@ -195,12 +196,31 @@
 /* Pending Orders Section */
 .pending-orders-section {
   margin-bottom: 24px;
+  padding: 0 16px;
 }
 
 .pending-orders-section h2 {
   font-size: 18px;
   margin-bottom: 12px;
   color: #FF6B00;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pending-orders-section h2 .order-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: #FF6B00;
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  animation: pulse 1.5s ease infinite;
 }
 
 .pending-orders-list {
@@ -296,6 +316,7 @@
 /* Earnings Section */
 .earnings-section {
   margin-bottom: 24px;
+  padding: 0 16px;
 }
 
 .earnings-section h2 {

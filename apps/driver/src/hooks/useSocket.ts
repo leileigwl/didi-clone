@@ -72,12 +72,17 @@ export function useSocket() {
         duration: data.duration,
         createdAt: new Date(data.timestamp),
         updatedAt: new Date(data.timestamp),
+        distanceFromDriver: data.distanceFromDriver,
+        durationFromDriver: data.durationFromDriver,
       }
       addPendingOrder(order)
 
       if (window.Notification) {
+        const distText = data.distanceFromDriver
+          ? ` · 距你${data.distanceFromDriver.toFixed(1)}km`
+          : ''
         new Notification('新订单!', {
-          body: `${data.pickup.address} → ${data.destination.address} · ¥${data.price}`,
+          body: `${data.pickup.address} → ${data.destination.address} · ¥${data.price}${distText}`,
         })
       }
     }
