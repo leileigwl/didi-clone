@@ -189,77 +189,72 @@ function createWindow() {
   })
 }
 
-// IPC handlers
-ipcMain.handle('driver:set-online', (event, status) => {
-  isOnline = status
-  updateTrayStatus(status, currentOrderCount)
-  return true
-})
-
-ipcMain.handle('driver:get-online', () => {
-  return isOnline
-})
-
-ipcMain.handle('driver:set-order-count', (event, count) => {
-  currentOrderCount = count
-  updateTrayStatus(isOnline, count)
-  return true
-})
-
-ipcMain.handle('driver:open-navigation', async (event, url) => {
-  await shell.openExternal(url)
-  return true
-})
-
-ipcMain.handle('driver:show-window', () => {
-  if (mainWindow) {
-    mainWindow.show()
-    mainWindow.focus()
-  }
-  return true
-})
-
-ipcMain.handle('driver:hide-window', () => {
-  if (mainWindow) mainWindow.hide()
-  return true
-})
-
-ipcMain.handle('driver:minimize', () => {
-  if (mainWindow) mainWindow.minimize()
-  return true
-})
-
-ipcMain.handle('driver:maximize', () => {
-  if (mainWindow) {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize()
-    } else {
-      mainWindow.maximize()
-    }
-  }
-  return true
-})
-
-// 请求macOS定位权限 - 注意: Electron的systemPreferences不支持location类型
-// 定位权限由浏览器geolocation API自动触发macOS系统对话框
-ipcMain.handle('driver:request-location-permission', async () => {
-  // 在macOS上，当webContent请求geolocation时，系统会自动弹出权限对话框
-  // Info.plist中的NSLocationWhenInUseUsageDescription已经配置
-  return { granted: true, status: 'prompt' }
-})
-
-// 打开系统偏好设置的定位服务
-ipcMain.handle('driver:open-location-settings', async () => {
-  if (process.platform === 'darwin') {
-    await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
-  }
-  return true
-})
-
 // App lifecycle
 app.whenReady().then(() => {
   createWindow()
   if (mainWindow) createTray(mainWindow)
+
+  // IPC handlers - 必须在 app.whenReady() 之后注册
+  ipcMain.handle('driver:set-online', (event, status) => {
+    isOnline = status
+    updateTrayStatus(status, currentOrderCount)
+    return true
+  })
+
+  ipcMain.handle('driver:get-online', () => {
+    return isOnline
+  })
+
+  ipcMain.handle('driver:set-order-count', (event, count) => {
+    currentOrderCount = count
+    updateTrayStatus(isOnline, count)
+    return true
+  })
+
+  ipcMain.handle('driver:open-navigation', async (event, url) => {
+    await shell.openExternal(url)
+    return true
+  })
+
+  ipcMain.handle('driver:show-window', () => {
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+    }
+    return true
+  })
+
+  ipcMain.handle('driver:hide-window', () => {
+    if (mainWindow) mainWindow.hide()
+    return true
+  })
+
+  ipcMain.handle('driver:minimize', () => {
+    if (mainWindow) mainWindow.minimize()
+    return true
+  })
+
+  ipcMain.handle('driver:maximize', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize()
+      } else {
+        mainWindow.maximize()
+      }
+    }
+    return true
+  })
+
+  ipcMain.handle('driver:request-location-permission', async () => {
+    return { granted: true, status: 'prompt' }
+  })
+
+  ipcMain.handle('driver:open-location-settings', async () => {
+    if (process.platform === 'darwin') {
+      await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices')
+    }
+    return true
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
