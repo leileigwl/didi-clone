@@ -10,7 +10,7 @@ import { setupSocket } from './socket'
 import { initMockData } from './store'
 
 // 高德地图 REST API Key（Web服务类型）
-const AMAP_REST_KEY = process.env.AMAP_REST_KEY || '7bf10417175742fc23ec515c46599e8d'
+const AMAP_REST_KEY = process.env.AMAP_REST_KEY || 'fadd42f67d5cc584808b19e95b0a485a'
 
 const app = express()
 const httpServer = createServer(app)

@@ -168,25 +168,30 @@ export function getNearbyDrivers(lat: number, lng: number, radiusKm = 5): Driver
 }
 
 // 通过高德 REST API 计算驾车距离（异步，更精确）
-const AMAP_REST_KEY = process.env.AMAP_REST_KEY || '7bf10417175742fc23ec515c46599e8d'
+const AMAP_REST_KEY = process.env.AMAP_REST_KEY || 'fadd42f67d5cc584808b19e95b0a485a'
 
 export async function calculateDrivingDistance(
   origins: { lat: number; lng: number }[],
   destination: { lat: number; lng: number }
 ): Promise<{ distance: number; duration: number }[]> {
   try {
-    const originsStr = origins.map(o => `${o.lng},${o.lat}`).join(';')
     const destStr = `${destination.lng},${destination.lat}`
-    const resp = await fetch(
-      `https://restapi.amap.com/v3/distance?key=${AMAP_REST_KEY}&origins=${originsStr}&destination=${destStr}&type=1&output=JSON`
-    )
-    const data = await resp.json()
-    if (data.status === '1' && data.results) {
-      return data.results.map((r: any) => ({
-        distance: parseFloat(r.distance) / 1000, // km
-        duration: parseFloat(r.duration) / 60,    // minutes
-      }))
-    }
+    // 逐个查询（REST API 多 origins 分号拼接有兼容问题）
+    const results = await Promise.all(origins.map(async (o) => {
+      const resp = await fetch(
+        `https://restapi.amap.com/v3/distance?key=${AMAP_REST_KEY}&origins=${o.lng},${o.lat}&destination=${destStr}&type=1&output=JSON`
+      )
+      const data = await resp.json()
+      if (data.status === '1' && data.results?.length > 0) {
+        return {
+          distance: parseFloat(data.results[0].distance) / 1000, // km
+          duration: parseFloat(data.results[0].duration) / 60,    // minutes
+        }
+      }
+      return null
+    }))
+    const valid = results.filter(Boolean) as { distance: number; duration: number }[]
+    if (valid.length === origins.length) return valid
   } catch (e) {
     console.warn('高德距离API调用失败，使用直线距离:', e)
   }
