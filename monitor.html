@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiDi Desktop - Agent Teams 监控面板</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #E8A45C;
+      --primary-light: #F5C896;
+      --success: #7AC9A8;
+      --warning: #E8C45C;
+      --error: #E87C7C;
+      --info: #7CA8E8;
+      --bg: #F7F7F7;
+      --card: #FFFFFF;
+      --text: #333333;
+      --text-secondary: #666666;
+      --border: #E5E5E5;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .header h1 {
+      color: var(--primary);
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .stat-card .value {
+      font-size: 36px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .stat-card .label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .agent-card {
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+
+    .agent-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .agent-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .agent-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .agent-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .agent-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .agent-role {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-running {
+      background: #E8F8F2;
+      color: var(--success);
+    }
+
+    .status-completed {
+      background: #E8F4FF;
+      color: var(--info);
+    }
+
+    .status-pending {
+      background: #FFF8E8;
+      color: var(--warning);
+    }
+
+    .status-error {
+      background: #FFE8E8;
+      color: var(--error);
+    }
+
+    .agent-body {
+      padding: 20px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .task-checkbox.done {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .task-checkbox.active {
+      border-color: var(--primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .files-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .files-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .files-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .file-tag {
+      padding: 4px 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text-secondary);
+    }
+
+    .commits-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .commit-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .commit-hash {
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .commit-time {
+      color: var(--text-secondary);
+      font-size: 11px;
+      margin-left: auto;
+    }
+
+    .refresh-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(232, 164, 92, 0.4);
+      transition: transform 0.2s;
+    }
+
+    .refresh-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .last-update {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 暗色模式 */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1A1A1A;
+        --card: #2A2A2A;
+        --text: #E5E5E5;
+        --text-secondary: #999999;
+        --border: #404040;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚗 DiDi Desktop - Agent Teams</h1>
+    <p class="subtitle">实时监控并行开发进度 | 三端齐全架构</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="value" id="total-agents">6</div>
+      <div class="label">总 Agent 数</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="running-agents">4</div>
+      <div class="label">运行中</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="completed-tasks">0%</div>
+      <div class="label">总进度</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="total-commits">0</div>
+      <div class="label">提交数</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="total-files">0</div>
+      <div class="label">文件数</div>
+    </div>
+  </div>
+
+  <div class="agents-grid" id="agents-container">
+    <!-- Agent 1: 基础架构 -->
+    <div class="agent-card" data-agent="1">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">🏗️</div>
+          <div>
+            <div class="agent-name">Agent 1</div>
+            <div class="agent-role">基础架构专家</div>
+          </div>
+        </div>
+        <span class="status-badge status-running">运行中</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox">☐</span> Monorepo 初始化</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> Electron 配置</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 共享包搭建</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> Git 工作流</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">package.json</span>
+            <span class="file-tag">turbo.json</span>
+            <span class="file-tag">pnpm-workspace.yaml</span>
+            <span class="file-tag">packages/shared/</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">--</span> <span>等待提交...</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 2: 地图核心 -->
+    <div class="agent-card" data-agent="2">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #11998e, #38ef7d);">🗺️</div>
+          <div>
+            <div class="agent-name">Agent 2</div>
+            <div class="agent-role">地图与定位专家</div>
+          </div>
+        </div>
+        <span class="status-badge status-completed">已完成</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox done">✓</span> 高德地图集成</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> MapView 组件</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> MapMarker 组件</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> 路线绘制</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> 定位选择器</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> 司机追踪动画</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">packages/ui/Map/</span>
+            <span class="file-tag">MapView.tsx</span>
+            <span class="file-tag">MapMarker.tsx</span>
+            <span class="file-tag">LocationPicker.tsx</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">a2:feat</span> <span>实现高德地图组件库</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 3: 后端服务 -->
+    <div class="agent-card" data-agent="3">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #ee0979, #ff6a00);">📦</div>
+          <div>
+            <div class="agent-name">Agent 3</div>
+            <div class="agent-role">后端服务专家</div>
+          </div>
+        </div>
+        <span class="status-badge status-completed">已完成</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox done">✓</span> Express 服务器</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> REST API 路由</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> Socket.io 实时通信</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> Mock 数据</li>
+          <li class="task-item"><span class="task-checkbox done">✓</span> API 客户端</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">server/</span>
+            <span class="file-tag">packages/api-client/</span>
+            <span class="file-tag">routes/*.ts</span>
+            <span class="file-tag">socket/*.ts</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">a3:feat</span> <span>后端服务完成</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 4: UI 组件库 -->
+    <div class="agent-card" data-agent="4">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #8E2DE2, #4A00E0);">🎨</div>
+          <div>
+            <div class="agent-name">Agent 4</div>
+            <div class="agent-role">UI 组件专家</div>
+          </div>
+        </div>
+        <span class="status-badge status-running">运行中</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 30%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox done">✓</span> CSS 变量系统</li>
+          <li class="task-item"><span class="task-checkbox active">◐</span> Button 组件</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> Input 组件</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> Modal 组件</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 订单卡片</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 司机卡片</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">packages/ui/styles/</span>
+            <span class="file-tag">packages/ui/components/</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">--</span> <span>开发中...</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 5: 司机端 -->
+    <div class="agent-card" data-agent="5">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #f093fb, #f5576c);">🚗</div>
+          <div>
+            <div class="agent-name">Agent 5</div>
+            <div class="agent-role">司机端开发</div>
+          </div>
+        </div>
+        <span class="status-badge status-pending">等待中</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox">☐</span> 司机端 Electron</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 接单功能</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 导航功能</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 收入管理</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">apps/driver/</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">--</span> <span>等待启动...</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 6: 管理端 -->
+    <div class="agent-card" data-agent="6">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-avatar" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">👨‍💼</div>
+          <div>
+            <div class="agent-name">Agent 6</div>
+            <div class="agent-role">管理端开发</div>
+          </div>
+        </div>
+        <span class="status-badge status-pending">等待中</span>
+      </div>
+      <div class="agent-body">
+        <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        <ul class="task-list">
+          <li class="task-item"><span class="task-checkbox">☐</span> 管理端 UI</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 订单监控</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 司机管理</li>
+          <li class="task-item"><span class="task-checkbox">☐</span> 数据统计</li>
+        </ul>
+        <div class="files-section">
+          <div class="files-title">负责文件</div>
+          <div class="files-list">
+            <span class="file-tag">apps/admin/</span>
+          </div>
+        </div>
+        <div class="commits-section">
+          <div class="commit-item"><span class="commit-hash">--</span> <span>等待启动...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="last-update">
+    最后更新: <span id="last-update-time">--</span> |
+    <button onclick="refreshStatus()" style="background:none;border:none;color:var(--primary);cursor:pointer;">刷新状态</button>
+  </div>
+
+  <button class="refresh-btn" onclick="refreshStatus()" title="刷新">🔄</button>
+
+  <script>
+    // Agent 状态数据
+    const agentsData = {
+      1: { status: 'running', progress: 0, tasks: [0, 0, 0, 0] },
+      2: { status: 'completed', progress: 100, tasks: [1, 1, 1, 1, 1, 1] },
+      3: { status: 'completed', progress: 100, tasks: [1, 1, 1, 1, 1] },
+      4: { status: 'running', progress: 30, tasks: [1, 0.5, 0, 0, 0, 0] },
+      5: { status: 'pending', progress: 0, tasks: [0, 0, 0, 0] },
+      6: { status: 'pending', progress: 0, tasks: [0, 0, 0, 0] }
+    };
+
+    // 刷新状态
+    function refreshStatus() {
+      // 这里可以接入实际的 API 或读取本地文件
+      // 目前是模拟数据
+
+      updateStats();
+      updateLastTime();
+    }
+
+    // 更新统计数据
+    function updateStats() {
+      const total = Object.keys(agentsData).length;
+      const running = Object.values(agentsData).filter(a => a.status === 'running').length;
+      const completed = Object.values(agentsData).filter(a => a.status === 'completed').length;
+      const avgProgress = Object.values(agentsData).reduce((sum, a) => sum + a.progress, 0) / total;
+
+      document.getElementById('total-agents').textContent = total;
+      document.getElementById('running-agents').textContent = running;
+      document.getElementById('completed-tasks').textContent = Math.round(avgProgress) + '%';
+
+      // 模拟文件数和提交数
+      document.getElementById('total-commits').textContent = '3';
+      document.getElementById('total-files').textContent = '28';
+    }
+
+    // 更新时间
+    function updateLastTime() {
+      const now = new Date();
+      document.getElementById('last-update-time').textContent = now.toLocaleString('zh-CN');
+    }
+
+    // 初始化
+    refreshStatus();
+
+    // 每 30 秒自动刷新
+    setInterval(refreshStatus, 30000);
+
+    // 模拟进度更新（演示用）
+    let demoMode = false;
+    if (demoMode) {
+      setInterval(() => {
+        if (agentsData[1].progress < 100) {
+          agentsData[1].progress += 5;
+        }
+        if (agentsData[4].progress < 100) {
+          agentsData[4].progress += 2;
+        }
+        refreshStatus();
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
