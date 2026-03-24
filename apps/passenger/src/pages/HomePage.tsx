@@ -100,14 +100,19 @@ export default function HomePage({ api }: HomePageProps) {
 
     // 初始化 PlaceSearch 插件（搜索所有类型地点，结果一定有坐标）
     AMap.plugin(['AMap.PlaceSearch'], () => {
-      const placeSearch = new AMap.PlaceSearch({
-        city: '全国',
-        citylimit: false,
-        pageSize: 10,
-        pageIndex: 1,
-        extensions: 'base',
-      })
-      placeSearchRef.current = placeSearch
+      try {
+        const placeSearch = new AMap.PlaceSearch({
+          city: '全国',
+          citylimit: false,
+          pageSize: 10,
+          pageIndex: 1,
+          extensions: 'base',
+        })
+        placeSearchRef.current = placeSearch
+        console.log('[PlaceSearch] 插件初始化成功')
+      } catch (e) {
+        console.error('[PlaceSearch] 插件初始化失败:', e)
+      }
     })
 
     // 优先使用 CoreLocation 获取真实位置
@@ -147,6 +152,7 @@ export default function HomePage({ api }: HomePageProps) {
   // 搜索地点（防抖）
   const doSearch = useCallback((keyword: string, type: 'pickup' | 'destination') => {
     if (!placeSearchRef.current || !keyword.trim()) {
+      console.log('[搜索] 跳过:', { hasRef: !!placeSearchRef.current, keyword })
       if (type === 'pickup') setPickupResults([])
       else setDestResults([])
       return
@@ -472,7 +478,7 @@ export default function HomePage({ api }: HomePageProps) {
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
           center={pickup || currentLocation || DEFAULT_YIWU}
-          zoom={14}
+          zoom={16}
           onMapReady={handleMapReady}
         >
           {/* 当前位置 */}
