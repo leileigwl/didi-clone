@@ -354,13 +354,43 @@ export default function HomePage({ api }: HomePageProps) {
     }
   }, [api])
 
-  // 预设目的地选项
+  // 义乌热门地标
   const presetDestinations = [
-    { name: '国贸CBD', lat: 39.9087, lng: 116.4602 },
-    { name: '中关村', lat: 39.9841, lng: 116.3074 },
-    { name: '北京站', lat: 39.9042, lng: 116.4273 },
-    { name: '首都机场', lat: 40.0799, lng: 116.6031 },
+    { name: '义乌站', lat: 29.3063, lng: 120.0743 },
+    { name: '国际博览中心', lat: 29.3215, lng: 120.0965 },
+    { name: '义乌港', lat: 29.3156, lng: 120.0812 },
+    { name: '绣湖广场', lat: 29.3082, lng: 120.0685 },
+    { name: '福田市场', lat: 29.3180, lng: 120.0930 },
+    { name: '义乌机场', lat: 29.3445, lng: 120.0295 },
   ]
+
+  // 预设距离缓存
+  const [presetDistances, setPresetDistances] = useState<Record<string, string>>({})
+
+  // 计算当前位置到各预设目的地的距离
+  useEffect(() => {
+    if (!currentLocation || !mapRef.current?.AMap) return
+    const AMap = mapRef.current.AMap
+    AMap.plugin(['AMap.Driving'], () => {
+      const driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME })
+      presetDestinations.forEach(dest => {
+        driving.search(
+          [currentLocation.lng, currentLocation.lat],
+          [dest.lng, dest.lat],
+          (status: string, result: any) => {
+            if (status === 'complete' && result.routes?.length > 0) {
+              const route = result.routes[0]
+              const dist = route.distance >= 1000
+                ? `${(route.distance / 1000).toFixed(1)}km`
+                : `${Math.round(route.distance)}m`
+              const dur = Math.ceil(route.time / 60)
+              setPresetDistances(prev => ({ ...prev, [dest.name]: `${dist} · ${dur}min` }))
+            }
+          }
+        )
+      })
+    })
+  }, [currentLocation])
 
   // 点击外部关闭搜索结果
   useEffect(() => {
@@ -524,6 +554,9 @@ export default function HomePage({ api }: HomePageProps) {
                   }}
                 >
                   {dest.name}
+                  {presetDistances[dest.name] && (
+                    <span className="preset-distance">{presetDistances[dest.name]}</span>
+                  )}
                 </button>
               ))}
             </div>
