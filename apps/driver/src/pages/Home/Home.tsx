@@ -324,15 +324,16 @@ const Home: React.FC = () => {
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
           center={driverLocation}
-          zoom={18}
+          zoom={16}
           theme="normal"
           onMapReady={handleMapReady}
         >
-          {/* 司机位置 - 蓝色水滴 */}
+          {/* 司机位置 - 📍图标 */}
           {driverLocation && (
             <MapMarker
               position={driverLocation}
               type="myLocation"
+              label="我的位置"
             />
           )}
 

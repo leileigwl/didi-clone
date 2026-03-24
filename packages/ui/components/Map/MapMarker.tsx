@@ -58,9 +58,11 @@ const markerIcons: Record<MarkerType, { icon: string; size: [number, number]; an
     anchor: [20, 24],
   },
   myLocation: {
-    icon: `<span style="font-size: 32px; line-height: 1;">📍</span>`,
-    size: [32, 32],
-    anchor: [16, 32],
+    icon: `<div style="display: flex; flex-direction: column; align-items: center;">
+      <span style="font-size: 32px; line-height: 1;">📍</span>
+    </div>`,
+    size: [32, 48],
+    anchor: [16, 48],
   },
 };
 

@@ -503,14 +503,14 @@ export default function HomePage({ api }: HomePageProps) {
           amapKey={AMAP_KEY}
           securityJsCode={AMAP_SECURITY_CODE}
           center={pickup || currentLocation || DEFAULT_YIWU}
-          zoom={18}
+          zoom={16}
           onMapReady={handleMapReady}
         >
-          {/* 我的位置（始终显示，蓝色水滴） */}
+          {/* 我的位置（📍图标） */}
           {currentLocation && (
             <MapMarker
               position={currentLocation}
-              type="passenger"
+              type="myLocation"
               label="我的位置"
               zIndex={200}
             />
