@@ -5,21 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   main: {
     build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'electron/main.ts')
-        },
-        external: ['electron', 'path', 'fs', 'os', 'crypto', 'stream', 'events', 'url', 'util']
+      lib: {
+        entry: { index: resolve(__dirname, 'electron/main.ts') }
       }
     }
   },
   preload: {
     build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'electron/preload.ts')
-        },
-        external: ['electron', 'path', 'fs', 'os', 'crypto', 'stream', 'events', 'url', 'util']
+      lib: {
+        entry: { index: resolve(__dirname, 'electron/preload.ts') }
       }
     }
   },
@@ -27,9 +21,7 @@ export default defineConfig({
     root: resolve(__dirname, 'src'),
     build: {
       rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'src/index.html')
-        }
+        input: resolve(__dirname, 'src/index.html')
       }
     },
     plugins: [react()]

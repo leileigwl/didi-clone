@@ -84,33 +84,29 @@ const Home: React.FC = () => {
     })
   }, [])
 
-  // 高德 IP 定位 REST API（比 CitySearch 精确，能到区/县级）
-  const locateWithIPApi = useCallback(async (_AMap: any, map: any) => {
-    try {
-      const resp = await fetch(
-        `https://restapi.amap.com/v3/ip?key=${AMAP_KEY}&output=JSON`
-      )
-      const data = await resp.json()
-      if (data.status === '1' && data.rectangle) {
-        // rectangle 格式: "lng1,lat1;lng2,lat2" 取中心点
-        const [p1, p2] = data.rectangle.split(';')
-        const [lng1, lat1] = p1.split(',').map(Number)
-        const [lng2, lat2] = p2.split(',').map(Number)
-        const lng = (lng1 + lng2) / 2
-        const lat = (lat1 + lat2) / 2
-        const pos = { lng, lat }
-        setDriverLocation(pos)
-        if (map) {
-          map.setCenter([lng, lat])
+  // 高德 IP 定位 - 使用 JS API 的 CitySearch（REST API 需要 Web服务类型的 key）
+  const locateWithIPApi = useCallback((_AMap: any, map: any) => {
+    _AMap.plugin(['AMap.CitySearch'], () => {
+      const citySearch = new _AMap.CitySearch()
+      citySearch.getLocalCity((status: string, result: any) => {
+        if (status === 'complete' && result.info === 'OK') {
+          const bounds = result.bounds
+          if (bounds) {
+            const center = bounds.getCenter()
+            const lng = center.getLng()
+            const lat = center.getLat()
+            setDriverLocation({ lng, lat })
+            if (map) {
+              map.setCenter([lng, lat])
+            }
+            setCurrentAddress(result.province + result.city)
+            console.log('IP定位结果:', result.city, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`)
+          }
+        } else {
+          console.warn('CitySearch定位失败，使用默认位置')
         }
-        setCurrentAddress(data.province + data.city + data.district)
-        console.log('IP定位结果:', data.city, data.district, `(${lng.toFixed(4)}, ${lat.toFixed(4)})`)
-      } else {
-        console.warn('IP定位API失败，使用默认位置')
-      }
-    } catch (e) {
-      console.error('IP定位API请求失败:', e)
-    }
+      })
+    })
   }, [])
 
   // 使用高德插件定位

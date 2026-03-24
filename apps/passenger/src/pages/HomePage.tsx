@@ -196,37 +196,36 @@ export default function HomePage({ api }: HomePageProps) {
     })
   }, [reverseGeocode])
 
-  // 高德 IP 定位 REST API
-  const locateWithIPApi = useCallback(async (map: any) => {
+  // 高德 IP 定位 - 使用 JS API 的 CitySearch（REST API 需要 Web服务类型的 key）
+  const locateWithIPApi = useCallback((map: any) => {
+    const currentAMap = mapRef.current?.AMap
+    if (!currentAMap) return
+
     setIsLocating(true)
-    try {
-      const resp = await fetch(
-        `https://restapi.amap.com/v3/ip?key=${AMAP_KEY}&output=JSON`
-      )
-      const data = await resp.json()
-      if (data.status === '1' && data.rectangle) {
-        const [p1, p2] = data.rectangle.split(';')
-        const [lng1, lat1] = p1.split(',').map(Number)
-        const [lng2, lat2] = p2.split(',').map(Number)
-        const pos: Position = {
-          lng: (lng1 + lng2) / 2,
-          lat: (lat1 + lat2) / 2,
-          address: data.province + data.city + data.district,
+    currentAMap.plugin(['AMap.CitySearch'], () => {
+      const citySearch = new currentAMap.CitySearch()
+      citySearch.getLocalCity((status: string, result: any) => {
+        setIsLocating(false)
+        if (status === 'complete' && result.info === 'OK') {
+          const bounds = result.bounds
+          if (bounds) {
+            const center = bounds.getCenter()
+            const pos: Position = {
+              lng: center.getLng(),
+              lat: center.getLat(),
+              address: result.province + result.city,
+            }
+            setCurrentLocation(pos)
+            map.setCenter([pos.lng, pos.lat])
+            map.setZoom(14)
+            console.log('IP定位结果:', result.city)
+          }
+        } else {
+          console.warn('CitySearch定位失败，使用默认位置')
+          setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
         }
-        setCurrentLocation(pos)
-        map.setCenter([pos.lng, pos.lat])
-        map.setZoom(14)
-        console.log('IP定位结果:', data.city, data.district)
-      } else {
-        console.warn('IP定位API失败，使用默认位置')
-        setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
-      }
-    } catch (e) {
-      console.error('IP定位API请求失败:', e)
-      setCurrentLocation({ lng: 116.397428, lat: 39.90923, address: '默认位置' })
-    } finally {
-      setIsLocating(false)
-    }
+      })
+    })
   }, [])
 
   // 逆地理编码
