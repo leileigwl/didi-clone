@@ -25,12 +25,35 @@ function App() {
           const res = await api.getCurrentUser()
           if (res.code === 0 && res.data) {
             setUser(res.data)
+          } else {
+            // token 无效，重新登录
+            await loginWithTestPhone()
           }
         } catch (e) {
-          localStorage.removeItem('passenger_token')
+          await loginWithTestPhone()
         }
+      } else if (!token) {
+        // 没有 token，自动使用测试手机号登录
+        await loginWithTestPhone()
       }
     }
+
+    const loginWithTestPhone = async () => {
+      try {
+        // 1. 发送验证码
+        await api.sendVerificationCode('13800138000')
+        // 2. 验证码登录 (开发环境固定验证码 123456)
+        const res = await api.verifyCode('13800138000', '123456')
+        if (res.code === 0 && res.data.token) {
+          localStorage.setItem('passenger_token', res.data.token)
+          setUser(res.data.user)
+          console.log('自动登录成功:', res.data.user)
+        }
+      } catch (e) {
+        console.error('自动登录失败:', e)
+      }
+    }
+
     autoLogin()
   }, [])
 
