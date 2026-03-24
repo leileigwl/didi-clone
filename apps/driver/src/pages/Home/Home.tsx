@@ -334,7 +334,6 @@ const Home: React.FC = () => {
               <div className="locating-pulse"></div>
               <div className="locating-pulse delay-1"></div>
               <div className="locating-pulse delay-2"></div>
-              <div className="locating-icon">📍</div>
             </div>
             <p className="locating-text">正在获取您的位置...</p>
           </div>
@@ -348,12 +347,11 @@ const Home: React.FC = () => {
           theme="normal"
           onMapReady={handleMapReady}
         >
-          {/* 司机位置 - 蓝色水滴+脉冲 */}
-          {driverLocation && (
+          {/* 司机位置 - 蓝色水滴+脉冲，定位完成后才显示 */}
+          {!isLocating && driverLocation && (
             <MapMarker
               position={driverLocation}
               type="myLocation"
-              label="我的位置"
             />
           )}
 
