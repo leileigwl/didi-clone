@@ -41,11 +41,35 @@ const Home: React.FC = () => {
   // 义乌市中心坐标作为默认位置
   const DEFAULT_YIWU: Position = { lng: 120.075, lat: 29.306 }
   const [driverLocation, setDriverLocation] = useState<Position>(DEFAULT_YIWU)
+  const [realGpsLocation, setRealGpsLocation] = useState<Position | null>(null) // 真实GPS位置
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [locationDenied, setLocationDenied] = useState(false)
   const [currentAddress, setCurrentAddress] = useState('定位中...')
   const [showLocationPicker, setShowLocationPicker] = useState(false) // 虚拟定位面板
   const mapRef = useRef<{ map: any; AMap: any } | null>(null)
+
+  // 返回真实GPS位置
+  const handleBackToRealLocation = useCallback(() => {
+    if (realGpsLocation && mapRef.current) {
+      const { map } = mapRef.current
+      setDriverLocation(realGpsLocation)
+      map.setCenter([realGpsLocation.lng, realGpsLocation.lat])
+      map.setZoom(18)
+      setShowLocationPicker(false)
+      // 重新逆地理编码
+      if (mapRef.current.AMap) {
+        const AMap = mapRef.current.AMap
+        AMap.plugin(['AMap.Geocoder'], () => {
+          const geocoder = new AMap.Geocoder()
+          geocoder.getAddress([realGpsLocation.lng, realGpsLocation.lat], (status: string, result: any) => {
+            if (status === 'complete' && result.regeocode) {
+              setCurrentAddress(result.regeocode.formattedAddress)
+            }
+          })
+        })
+      }
+    }
+  }, [realGpsLocation])
 
   // 更新时间
   useEffect(() => {
@@ -55,13 +79,13 @@ const Home: React.FC = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // 预设测试位置名称（坐标通过高德API动态获取）
+  // 预设测试位置名称（坐标通过高德API动态获取）- 加上义乌前缀确保搜索准确
   const presetLocationNames = [
     '义乌市中心',
     '义乌站',
-    '国际商贸城',
-    '福田市场',
-    '绣湖广场',
+    '义乌国际商贸城',
+    '义乌福田市场',
+    '义乌绣湖广场',
   ]
 
   const [presetLocations, setPresetLocations] = useState<Array<{ name: string; lng: number; lat: number }>>([])
@@ -133,31 +157,6 @@ const Home: React.FC = () => {
     if (currentOrder) {
       navigate(`/order/${currentOrder.id}`)
     }
-  }
-
-  // 打开系统定位设置，然后重试定位
-  const handleOpenLocationSettings = async () => {
-    if (window.electronAPI?.openLocationSettings) {
-      await window.electronAPI.openLocationSettings()
-    }
-    // 等待用户开启权限后重试
-    setTimeout(() => {
-      if (mapRef.current) {
-        const { map, AMap } = mapRef.current
-        if (window.electronAPI?.getNativeLocation) {
-          window.electronAPI.getNativeLocation().then((result: any) => {
-            if ('lat' in result) {
-              const { lat, lng } = result
-              setDriverLocation({ lng, lat })
-              setLocationDenied(false)
-              map.setCenter([lng, lat])
-              map.setZoom(18)
-              reverseGeocode(lng, lat, AMap)
-            }
-          })
-        }
-      }
-    }, 3000)
   }
 
   // 路线规划完成
@@ -282,6 +281,59 @@ const Home: React.FC = () => {
     map.add(circleRef.current)
   }, [])
 
+  // 重试定位
+  const retryLocation = useCallback(async () => {
+    if (!mapRef.current) return
+    const { map, AMap } = mapRef.current
+
+    // 先尝试 CoreLocation
+    if (window.electronAPI?.getNativeLocation) {
+      try {
+        const result = await window.electronAPI.getNativeLocation()
+        if ('lat' in result && 'lng' in result) {
+          const { lat, lng } = result
+          setDriverLocation({ lng, lat })
+          setLocationDenied(false)
+          map.setCenter([lng, lat])
+          map.setZoom(18)
+          updateRangeCircle(lng, lat, AMap, map)
+          reverseGeocode(lng, lat, AMap)
+          return
+        }
+      } catch (e) {
+        console.warn('重试定位失败:', e)
+      }
+    }
+
+    // 再尝试 HTML5 定位
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords
+          setDriverLocation({ lng, lat })
+          setLocationDenied(false)
+          map.setCenter([lng, lat])
+          map.setZoom(18)
+          updateRangeCircle(lng, lat, AMap, map)
+          reverseGeocode(lng, lat, AMap)
+        },
+        (err) => {
+          console.warn('HTML5定位也失败:', err.message)
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    }
+  }, [updateRangeCircle, reverseGeocode])
+
+  // 打开系统定位设置，然后重试定位
+  const handleOpenLocationSettings = useCallback(async () => {
+    if (window.electronAPI?.openLocationSettings) {
+      await window.electronAPI.openLocationSettings()
+    }
+    // 等待用户开启权限后重试
+    setTimeout(retryLocation, 3000)
+  }, [retryLocation])
+
   // 地图加载完成后定位
   const handleMapReady = useCallback((map: any, AMap: any) => {
     mapRef.current = { map, AMap }
@@ -337,7 +389,9 @@ const Home: React.FC = () => {
         if ('lat' in result && 'lng' in result) {
           const { lat, lng, accuracy } = result
           console.log('CoreLocation定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
-          setDriverLocation({ lng, lat })
+          const pos = { lng, lat }
+          setDriverLocation(pos)
+          setRealGpsLocation(pos) // 保存真实GPS位置
           setLocationDenied(false)
           map.setCenter([lng, lat])
           map.setZoom(18)
@@ -364,7 +418,9 @@ const Home: React.FC = () => {
           (pos) => {
             const { latitude: lat, longitude: lng, accuracy } = pos.coords
             console.log('HTML5定位成功:', `(${lng.toFixed(4)}, ${lat.toFixed(4)})`, `精度: ${accuracy.toFixed(0)}m`)
-            setDriverLocation({ lng, lat })
+            const gpsPos = { lng, lat }
+            setDriverLocation(gpsPos)
+            setRealGpsLocation(gpsPos) // 保存真实GPS位置
             setLocationDenied(false)
             map.setCenter([lng, lat])
             map.setZoom(18)
@@ -459,19 +515,36 @@ const Home: React.FC = () => {
           {/* 当前订单 - 显示乘客位置和路线 */}
           {currentOrder && driverLocation && (
             <>
-              <MapMarker
-                position={currentOrder.pickup}
-                type="origin"
-                label="乘客位置"
-              />
+              {/* 上车点标记 - 仅在未开始行程时显示 */}
+              {(currentOrder.status === 'accepted' ||
+                currentOrder.status === 'driver_arriving' ||
+                currentOrder.status === 'arrived') && (
+                <MapMarker
+                  position={currentOrder.pickup}
+                  type="origin"
+                  label="上车点"
+                />
+              )}
+              {/* 目的地标记 - 始终显示 */}
               <MapMarker
                 position={currentOrder.destination}
                 type="destination"
                 label="目的地"
               />
+              {/* 路线 - 根据订单状态切换 */}
               <MapRoute
+                key={currentOrder.status === 'in_progress' ? 'to-destination' : 'to-pickup'}
                 origin={driverLocation}
-                destination={currentOrder.pickup}
+                destination={
+                  currentOrder.status === 'in_progress'
+                    ? currentOrder.destination
+                    : currentOrder.pickup
+                }
+                color={
+                  currentOrder.status === 'in_progress'
+                    ? '#52c41a'
+                    : '#1890ff'
+                }
                 onRouteComplete={handleRouteComplete}
               />
             </>
@@ -505,6 +578,16 @@ const Home: React.FC = () => {
               <button onClick={() => setShowLocationPicker(false)}>✕</button>
             </div>
             <div className="location-picker-list">
+              {/* 我的真实位置选项 */}
+              {realGpsLocation && (
+                <button
+                  className={`location-picker-item my-location ${driverLocation.lng === realGpsLocation.lng && driverLocation.lat === realGpsLocation.lat ? 'active' : ''}`}
+                  onClick={handleBackToRealLocation}
+                >
+                  <span className="loc-icon">🎯</span>
+                  <span className="loc-name">我的位置</span>
+                </button>
+              )}
               {presetLocations.map(loc => (
                 <button
                   key={loc.name}
@@ -548,7 +631,10 @@ const Home: React.FC = () => {
         {locationDenied && (
           <div className="location-denied-banner">
             <span className="warning-icon">⚠️</span>
-            <span>定位权限被拒绝，无法获取精确位置</span>
+            <div className="denied-content">
+              <span className="denied-title">定位权限未开启</span>
+              <span className="denied-hint">请在系统设置中开启「定位服务」，并允许 Terminal.app 访问位置</span>
+            </div>
             <button onClick={handleOpenLocationSettings} className="open-settings-btn">
               打开设置
             </button>

@@ -195,6 +195,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
             {/* 路线 */}
             {routePath.length > 0 && (
               <MapRoute
+                key={currentOrder.status === 'driving' ? 'to-destination' : 'to-pickup'}
                 origin={
                   currentOrder.status === 'driving'
                     ? currentOrder.origin
@@ -205,6 +206,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
                     ? currentOrder.destination
                     : currentOrder.origin
                 }
+                color={currentOrder.status === 'driving' ? '#52c41a' : '#1890ff'}
                 onRouteComplete={handleRouteComplete}
               />
             )}

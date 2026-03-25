@@ -111,9 +111,10 @@ const Navigation: React.FC = () => {
         >
           {location && (
             <MapRoute
+              key={currentOrder.status === 'in_progress' ? 'to-destination' : 'to-pickup'}
               origin={location}
               destination={destination}
-              color="#7AC9A8"
+              color={currentOrder.status === 'in_progress' ? '#52c41a' : '#7AC9A8'}
             />
           )}
         </MapView>

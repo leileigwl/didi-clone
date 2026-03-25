@@ -159,22 +159,3 @@ export const useDriverStore = create<DriverState>((set, get) => ({
 
   reset: () => set(initialState)
 }))
-
-// Type for window.electronAPI
-declare global {
-  interface Window {
-    electronAPI?: {
-      setOnline: (status: boolean) => Promise<boolean>
-      getOnline: () => Promise<boolean>
-      setOrderCount: (count: number) => Promise<boolean>
-      openNavigation: (url: string) => Promise<boolean>
-      showWindow: () => Promise<void>
-      hideWindow: () => Promise<void>
-      minimize: () => Promise<void>
-      maximize: () => Promise<void>
-      onNewOrder: (callback: (order: Order) => void) => () => void
-      onOrderCancelled: (callback: (orderId: string) => void) => () => void
-      onTrayClick: (callback: () => void) => () => void
-    }
-  }
-}

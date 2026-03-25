@@ -207,6 +207,17 @@
   color: #FF6B00;
 }
 
+.location-picker-item.my-location {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 4px;
+  padding-bottom: 12px;
+  color: #1890ff;
+}
+
+.location-picker-item.my-location:hover {
+  background: #e6f7ff;
+}
+
 .location-picker-item .loc-icon {
   font-size: 16px;
 }
@@ -584,25 +595,46 @@
   border: 1px solid #ff6b6b;
   border-radius: 8px;
   margin: 8px 16px;
-  color: #ff8e8e;
+  color: #d63031;
   font-size: 13px;
 }
 
 .location-denied-banner .warning-icon {
-  font-size: 18px;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.location-denied-banner .denied-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.location-denied-banner .denied-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #c0392b;
+}
+
+.location-denied-banner .denied-hint {
+  font-size: 12px;
+  color: #7f8c8d;
+  line-height: 1.4;
 }
 
 .location-denied-banner .open-settings-btn {
   margin-left: auto;
-  padding: 6px 12px;
+  padding: 8px 16px;
   background: #ff6b6b;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
 .location-denied-banner .open-settings-btn:hover {

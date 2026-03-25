@@ -34,14 +34,13 @@ export function useLocation(options: GeolocationOptions = defaultOptions) {
   const startTracking = useCallback(() => {
     const { AMap, map } = amapRef.current || {}
     if (!AMap || !map) {
-      // 地图尚未加载，尝试 CoreLocation
-      if (window.electronAPI?.getNativeLocation) {
-        window.electronAPI.getNativeLocation().then((result: any) => {
-          if ('lat' in result && 'lng' in result) {
-            setLocation({ address: '', lat: result.lat, lng: result.lng })
-          }
-        })
-      }
+      // 地图尚未加载，尝试获取位置
+      getCurrentPosition().then((pos) => {
+        setLocation({ address: pos.address || '', lat: pos.lat, lng: pos.lng })
+      }).catch((err) => {
+        console.warn('获取位置失败:', err)
+        setError('无法获取位置')
+      })
       return
     }
 
@@ -98,14 +97,42 @@ export function useLocation(options: GeolocationOptions = defaultOptions) {
             resolve({ lat: result.lat, lng: result.lng })
             return
           }
-          // CoreLocation 失败，尝试 AMap
-          resolveWithAMap(resolve, reject)
-        }).catch(() => resolveWithAMap(resolve, reject))
+          // CoreLocation 失败，尝试 navigator.geolocation (Electron 有权限)
+          resolveWithNavigator(resolve, reject)
+        }).catch(() => resolveWithNavigator(resolve, reject))
       } else {
-        resolveWithAMap(resolve, reject)
+        // 没有 native location，直接用 navigator.geolocation
+        resolveWithNavigator(resolve, reject)
       }
     })
   }, [])
+
+  // 使用 navigator.geolocation (Electron 已有权限)
+  const resolveWithNavigator = (
+    resolve: (value: { lat: number; lng: number; address?: string }) => void,
+    reject: (reason: Error) => void
+  ) => {
+    if (!navigator.geolocation) {
+      resolveWithAMap(resolve, reject)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        })
+      },
+      (err) => {
+        console.warn('navigator.geolocation failed:', err.message)
+        // navigator 失败，尝试 AMap
+        resolveWithAMap(resolve, reject)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
 
   const resolveWithAMap = (
     resolve: (value: { lat: number; lng: number; address?: string }) => void,
