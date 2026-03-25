@@ -8,6 +8,7 @@ const api = new APIClient('http://localhost:3000')
 // 页面组件
 import HomePage from './pages/HomePage'
 import OrderPage from './pages/OrderPage'
+import OrdersPage from './pages/OrdersPage'
 import ProfilePage from './pages/ProfilePage'
 
 function App() {
@@ -104,7 +105,9 @@ function App() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={<HomePage api={api} />} />
+          <Route path="/orders" element={<OrdersPage />} />
           <Route path="/order/:id" element={<OrderPage api={api} />} />
+          <Route path="/profile" element={<ProfilePage api={api} />} />
         </Routes>
       </main>
 
@@ -114,11 +117,11 @@ function App() {
           <span className="nav-icon">🏠</span>
           <span className="nav-label">首页</span>
         </Link>
-        <Link to="/" className={`nav-item ${location.pathname.startsWith('/order') ? 'active' : ''}`}>
+        <Link to="/orders" className={`nav-item ${location.pathname === '/orders' ? 'active' : ''}`}>
           <span className="nav-icon">📋</span>
           <span className="nav-label">订单</span>
         </Link>
-        <Link to="/" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
+        <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
           <span className="nav-icon">👤</span>
           <span className="nav-label">我的</span>
         </Link>
